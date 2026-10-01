@@ -1,0 +1,106 @@
+/**
+ * @file notifications.ts
+ * Browser Notification API helper for habit reminders.
+ */
+
+import { Habit, HabitLogs } from '../types';
+import { getTodayKey } from './date';
+import { isHabitScheduledOnDate } from './streaks';
+
+export interface NotificationStatus {
+  isSupported: boolean;
+  permission: NotificationPermission;
+}
+
+export function getNotificationStatus(): NotificationStatus {
+  if (typeof window === 'undefined' || !('Notification' in window)) {
+    return {
+      isSupported: false,
+      permission: 'denied',
+    };
+  }
+
+  return {
+    isSupported: true,
+    permission: Notification.permission,
+  };
+}
+
+export async function requestNotificationPermission(): Promise<NotificationPermission> {
+  if (typeof window === 'undefined' || !('Notification' in window)) {
+    return 'denied';
+  }
+
+  try {
+    const permission = await Notification.requestPermission();
+    return permission;
+  } catch (e) {
+    console.error('Error requesting notification permission:', e);
+    return 'denied';
+  }
+}
+
+export function sendHabitNotification(title: string, body: string, icon = '/pwa-192x192.png') {
+  if (typeof window === 'undefined' || !('Notification' in window)) return;
+  if (Notification.permission !== 'granted') return;
+
+  try {
+    const options: NotificationOptions = {
+      body,
+      icon,
+      badge: '/favicon.ico',
+      tag: 'habit-reminder',
+    };
+
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.ready.then((reg) => {
+        reg.showNotification(title, options);
+      }).catch(() => {
+        new Notification(title, options);
+      });
+    } else {
+      new Notification(title, options);
+    }
+  } catch (e) {
+    console.warn('Failed to send notification:', e);
+  }
+}
+
+// Track last triggered minute to prevent spamming within the same minute
+let lastTriggeredMinute = '';
+
+/**
+ * Checks all active habits and triggers notifications if reminder time matches current local time.
+ */
+export function checkHabitReminders(habits: Habit[], logs: HabitLogs) {
+  if (typeof window === 'undefined' || !('Notification' in window)) return;
+  if (Notification.permission !== 'granted') return;
+
+  const now = new Date();
+  const currentHours = String(now.getHours()).padStart(2, '0');
+  const currentMinutes = String(now.getMinutes()).padStart(2, '0');
+  const currentTimeStr = `${currentHours}:${currentMinutes}`;
+  const todayKey = getTodayKey();
+  const currentMinuteKey = `${todayKey}_${currentTimeStr}`;
+
+  if (lastTriggeredMinute === currentMinuteKey) {
+    return; // Already checked for this specific minute
+  }
+  lastTriggeredMinute = currentMinuteKey;
+
+  const activeHabits = habits.filter((h) => !h.archived);
+
+  for (const habit of activeHabits) {
+    if (habit.reminderEnabled && habit.reminderTime === currentTimeStr) {
+      const scheduled = isHabitScheduledOnDate(habit, todayKey);
+      const completed = !!(logs[habit.id] && logs[habit.id][todayKey]);
+
+      if (scheduled && !completed) {
+        sendHabitNotification(
+          `Time for: ${habit.name} ${habit.emoji}`,
+          `Keep your streak alive! Tap to check off today's habit.`
+        );
+      }
+    }
+  }
+}

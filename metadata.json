@@ -1,0 +1,6 @@
+{
+  "name": "HabitPulse - Minimal Habit Tracker & Streaks",
+  "description": "Mobile-first offline Progressive Web App for tracking daily habits, building streaks, and visualizing progress with 90-day heatmaps.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
