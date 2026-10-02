@@ -5,7 +5,7 @@
  * can easily be plugged in without refactoring UI components.
  */
 
-import { Habit, HabitLogs, AppSettings, Category } from '../types';
+import { Habit, HabitLogs, AppSettings, Category, UserProfile } from '../types';
 import { getTodayKey, addDaysToDateKey } from '../utils/date';
 
 const STORAGE_KEYS = {
@@ -13,6 +13,7 @@ const STORAGE_KEYS = {
   LOGS: 'habitpulse_logs_v1',
   SETTINGS: 'habitpulse_settings_v1',
   CATEGORIES: 'habitpulse_categories_v1',
+  PROFILE: 'habitpulse_profile_v1',
 };
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -21,6 +22,16 @@ export const DEFAULT_SETTINGS: AppSettings = {
   soundEnabled: true,
   hapticsEnabled: true,
   notificationsEnabled: false,
+};
+
+export const DEFAULT_PROFILE: UserProfile = {
+  name: 'Habit Champion',
+  avatar: '🦁',
+  bio: 'Building consistent daily habits one small step at a time.',
+  title: 'Consistent Striver',
+  joinedAt: new Date().toISOString(),
+  dailyHabitGoal: 4,
+  themeColor: 'indigo',
 };
 
 export const DEFAULT_CATEGORIES: Category[] = [
@@ -126,6 +137,7 @@ export function generateStarterLogs(habits: Habit[]): HabitLogs {
 export interface BackupData {
   version: number;
   exportedAt: string;
+  profile?: UserProfile;
   habits: Habit[];
   logs: HabitLogs;
   categories: Category[];
@@ -133,6 +145,35 @@ export interface BackupData {
 }
 
 export const storage = {
+  /**
+   * Loads user profile from storage.
+   */
+  async getProfile(): Promise<UserProfile> {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.PROFILE);
+      if (!raw) {
+        await this.saveProfile(DEFAULT_PROFILE);
+        return DEFAULT_PROFILE;
+      }
+      return { ...DEFAULT_PROFILE, ...JSON.parse(raw) };
+    } catch (e) {
+      console.error('Error loading profile from localStorage:', e);
+      return DEFAULT_PROFILE;
+    }
+  },
+
+  /**
+   * Saves user profile to storage.
+   */
+  async saveProfile(profile: UserProfile): Promise<void> {
+    try {
+      localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(profile));
+      window.dispatchEvent(new CustomEvent('habitpulse-profile-changed', { detail: profile }));
+    } catch (e) {
+      console.error('Error saving profile to localStorage:', e);
+    }
+  },
+
   /**
    * Loads all categories from storage.
    */
@@ -174,6 +215,7 @@ export const storage = {
         const starterLogs = generateStarterLogs(initial);
         await this.saveLogs(starterLogs);
         await this.saveCategories(DEFAULT_CATEGORIES);
+        await this.saveProfile(DEFAULT_PROFILE);
         return initial;
       }
       return JSON.parse(raw);
@@ -251,6 +293,7 @@ export const storage = {
    * Exports full database as JSON object string for backups.
    */
   async exportAllData(): Promise<string> {
+    const profile = await this.getProfile();
     const habits = await this.getHabits();
     const logs = await this.getLogs();
     const categories = await this.getCategories();
@@ -259,6 +302,7 @@ export const storage = {
     const backup: BackupData = {
       version: 2,
       exportedAt: new Date().toISOString(),
+      profile,
       habits,
       logs,
       categories,
@@ -285,13 +329,16 @@ export const storage = {
       if (Array.isArray(parsed.categories)) {
         await this.saveCategories(parsed.categories);
       }
+      if (parsed.profile && typeof parsed.profile === 'object') {
+        await this.saveProfile({ ...DEFAULT_PROFILE, ...parsed.profile });
+      }
       if (parsed.settings && typeof parsed.settings === 'object') {
         await this.saveSettings({ ...DEFAULT_SETTINGS, ...parsed.settings });
       }
 
       return {
         success: true,
-        message: `Successfully restored ${parsed.habits.length} habits, categories, and logs!`,
+        message: `Successfully restored ${parsed.habits.length} habits, categories, profile, and logs!`,
         habitsCount: parsed.habits.length,
       };
     } catch (e) {
@@ -308,6 +355,7 @@ export const storage = {
     localStorage.removeItem(STORAGE_KEYS.LOGS);
     localStorage.removeItem(STORAGE_KEYS.CATEGORIES);
     localStorage.removeItem(STORAGE_KEYS.SETTINGS);
+    localStorage.removeItem(STORAGE_KEYS.PROFILE);
     window.dispatchEvent(new CustomEvent('habitpulse-reset'));
   },
 
@@ -318,6 +366,7 @@ export const storage = {
     const habits = INITIAL_HABITS;
     const logs = generateStarterLogs(habits);
     await this.saveCategories(DEFAULT_CATEGORIES);
+    await this.saveProfile(DEFAULT_PROFILE);
     await this.saveHabits(habits);
     await this.saveLogs(logs);
   },

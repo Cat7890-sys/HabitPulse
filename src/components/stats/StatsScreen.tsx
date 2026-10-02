@@ -1,9 +1,11 @@
 import React from 'react';
 import { Flame, Trophy, CheckCircle, Target, Award, ArrowUpRight } from 'lucide-react';
-import { Habit, HabitLogs, HabitComputedStats, Category } from '../../types';
+import { Habit, HabitLogs, HabitComputedStats, Category, UserProfile } from '../../types';
 import { Heatmap90Days } from './Heatmap90Days';
 import { WeeklyChart } from './WeeklyChart';
 import { WeeklyGoalProgress } from './WeeklyGoalProgress';
+import { AchievementsList } from './AchievementsList';
+import { ProfileCard } from '../profile/ProfileCard';
 import { COLOR_SCHEMES } from '../common/ColorMap';
 
 interface Props {
@@ -11,6 +13,8 @@ interface Props {
   categories?: Category[];
   logs: HabitLogs;
   computedStats: HabitComputedStats[];
+  profile?: UserProfile;
+  onOpenProfile?: () => void;
   onSelectHabit?: (habit: Habit) => void;
 }
 
@@ -19,6 +23,8 @@ export const StatsScreen: React.FC<Props> = ({
   categories = [],
   logs,
   computedStats,
+  profile,
+  onOpenProfile,
 }) => {
   // Compute overall KPI metrics
   const totalCheckins = React.useMemo(() => {
@@ -43,6 +49,16 @@ export const StatsScreen: React.FC<Props> = ({
 
   return (
     <div className="space-y-5 pb-12">
+      {/* Profile Overview Card */}
+      {profile && onOpenProfile && (
+        <ProfileCard
+          profile={profile}
+          totalCompletions={totalCheckins}
+          bestStreak={bestOverallStreak}
+          onEditProfile={onOpenProfile}
+        />
+      )}
+
       {/* KPI Overview Grid */}
       <div className="grid grid-cols-2 gap-3">
         {/* Total Check-ins */}
@@ -117,6 +133,14 @@ export const StatsScreen: React.FC<Props> = ({
           </span>
         </div>
       </div>
+
+      {/* Achievements and Milestones System */}
+      <AchievementsList
+        habits={habits}
+        logs={logs}
+        computedStats={computedStats}
+        categories={categories}
+      />
 
       {/* Weekly Goal Progress Widget by Category */}
       <WeeklyGoalProgress

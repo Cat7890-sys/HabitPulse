@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import confetti from 'canvas-confetti';
-import { Habit, HabitLogs, AppSettings, HabitComputedStats, Category } from '../types';
-import { storage, DEFAULT_SETTINGS, DEFAULT_CATEGORIES } from '../storage/storage';
+import { Habit, HabitLogs, AppSettings, HabitComputedStats, Category, UserProfile } from '../types';
+import { storage, DEFAULT_SETTINGS, DEFAULT_CATEGORIES, DEFAULT_PROFILE } from '../storage/storage';
 import { getTodayKey } from '../utils/date';
 import { computeHabitStats, isHabitScheduledOnDate } from '../utils/streaks';
 import { sound, triggerHaptic } from '../utils/sound';
@@ -12,6 +12,7 @@ export function useHabits() {
   const [categories, setCategories] = useState<Category[]>(DEFAULT_CATEGORIES);
   const [logs, setLogs] = useState<HabitLogs>({});
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
+  const [profile, setProfile] = useState<UserProfile>(DEFAULT_PROFILE);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDateKey, setSelectedDateKey] = useState<string>(getTodayKey());
   const [showCelebrationModal, setShowCelebrationModal] = useState(false);
@@ -19,16 +20,18 @@ export function useHabits() {
   // Initial load
   const loadData = useCallback(async () => {
     try {
-      const [savedHabits, savedLogs, savedCategories, savedSettings] = await Promise.all([
+      const [savedHabits, savedLogs, savedCategories, savedSettings, savedProfile] = await Promise.all([
         storage.getHabits(),
         storage.getLogs(),
         storage.getCategories(),
         storage.getSettings(),
+        storage.getProfile(),
       ]);
       setHabits(savedHabits);
       setLogs(savedLogs);
       setCategories(savedCategories);
       setSettings(savedSettings);
+      setProfile(savedProfile);
     } catch (e) {
       console.error('Failed to load habit data:', e);
     } finally {
@@ -44,12 +47,14 @@ export function useHabits() {
     const handleLogsChange = () => storage.getLogs().then(setLogs);
     const handleCategoriesChange = () => storage.getCategories().then(setCategories);
     const handleSettingsChange = () => storage.getSettings().then(setSettings);
+    const handleProfileChange = () => storage.getProfile().then(setProfile);
     const handleReset = () => loadData();
 
     window.addEventListener('habitpulse-habits-changed', handleHabitsChange);
     window.addEventListener('habitpulse-logs-changed', handleLogsChange);
     window.addEventListener('habitpulse-categories-changed', handleCategoriesChange);
     window.addEventListener('habitpulse-settings-changed', handleSettingsChange);
+    window.addEventListener('habitpulse-profile-changed', handleProfileChange);
     window.addEventListener('habitpulse-reset', handleReset);
 
     return () => {
@@ -57,6 +62,7 @@ export function useHabits() {
       window.removeEventListener('habitpulse-logs-changed', handleLogsChange);
       window.removeEventListener('habitpulse-categories-changed', handleCategoriesChange);
       window.removeEventListener('habitpulse-settings-changed', handleSettingsChange);
+      window.removeEventListener('habitpulse-profile-changed', handleProfileChange);
       window.removeEventListener('habitpulse-reset', handleReset);
     };
   }, [loadData]);
@@ -65,11 +71,11 @@ export function useHabits() {
   useEffect(() => {
     if (!settings.notificationsEnabled) return;
 
-    // Check on mount and every 30s
+    // Check on mount and every 15s for exact minute accuracy
     checkHabitReminders(habits, logs);
     const interval = setInterval(() => {
       checkHabitReminders(habits, logs);
-    }, 30000);
+    }, 15000);
 
     return () => clearInterval(interval);
   }, [habits, logs, settings.notificationsEnabled]);
@@ -172,7 +178,7 @@ export function useHabits() {
     async (newHabitData: Omit<Habit, 'id' | 'createdAt'>) => {
       const newHabit: Habit = {
         ...newHabitData,
-        id: `habit-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+        id: `habit-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
         createdAt: new Date().toISOString(),
         order: habits.length,
       };
@@ -188,7 +194,9 @@ export function useHabits() {
   // Update existing habit
   const updateHabit = useCallback(
     async (habitId: string, updates: Partial<Habit>) => {
-      const updated = habits.map((h) => (h.id === habitId ? { ...h, ...updates } : h));
+      const updated = habits.map((h) =>
+        h.id === habitId ? { ...h, ...updates } : h
+      );
       setHabits(updated);
       await storage.saveHabits(updated);
     },
@@ -199,22 +207,24 @@ export function useHabits() {
   const deleteHabit = useCallback(
     async (habitId: string) => {
       const updated = habits.filter((h) => h.id !== habitId);
+      setHabits(updated);
+      await storage.saveHabits(updated);
+
+      // Clean up logs for deleted habit
       const newLogs = { ...logs };
       delete newLogs[habitId];
-
-      setHabits(updated);
       setLogs(newLogs);
-      await Promise.all([storage.saveHabits(updated), storage.saveLogs(newLogs)]);
+      await storage.saveLogs(newLogs);
     },
     [habits, logs]
   );
 
   // Add custom category
   const addCategory = useCallback(
-    async (categoryData: Omit<Category, 'id'>): Promise<Category> => {
+    async (newCategoryData: Omit<Category, 'id'>) => {
       const newCat: Category = {
-        ...categoryData,
-        id: `cat-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+        ...newCategoryData,
+        id: `cat-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
       };
       const updated = [...categories, newCat];
       setCategories(updated);
@@ -227,15 +237,23 @@ export function useHabits() {
   // Update custom category
   const updateCategory = useCallback(
     async (id: string, updates: Partial<Category>) => {
-      const updated = categories.map((c) => (c.id === id ? { ...c, ...updates } : c));
+      const updated = categories.map((c) =>
+        c.id === id ? { ...c, ...updates } : c
+      );
       setCategories(updated);
       await storage.saveCategories(updated);
 
-      // Also update habit category names if renamed
-      if (updates.name) {
-        const updatedHabits = habits.map((h) =>
-          h.categoryId === id ? { ...h, category: updates.name } : h
-        );
+      // If category name or color changed, also sync habits linked to it
+      if (updates.name || updates.color) {
+        const updatedHabits = habits.map((h) => {
+          if (h.categoryId === id) {
+            return {
+              ...h,
+              category: updates.name || h.category,
+            };
+          }
+          return h;
+        });
         setHabits(updatedHabits);
         await storage.saveHabits(updatedHabits);
       }
@@ -263,11 +281,21 @@ export function useHabits() {
     [settings]
   );
 
+  // Update profile
+  const updateProfile = useCallback(
+    async (newProfile: UserProfile) => {
+      setProfile(newProfile);
+      await storage.saveProfile(newProfile);
+    },
+    []
+  );
+
   return {
     habits,
     categories,
     logs,
     settings,
+    profile,
     isLoading,
     selectedDateKey,
     setSelectedDateKey,
@@ -282,6 +310,7 @@ export function useHabits() {
     updateCategory,
     deleteCategory,
     updateSettings,
+    updateProfile,
     refreshData: loadData,
     showCelebrationModal,
     setShowCelebrationModal,

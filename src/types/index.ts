@@ -75,3 +75,27 @@ export interface HabitComputedStats {
 }
 
 export type ActiveTab = 'today' | 'habits' | 'stats' | 'settings';
+
+export interface UserProfile {
+  name: string;
+  avatar: string; // Emoji or avatar identifier
+  bio: string;
+  title: string;
+  joinedAt: string;
+  dailyHabitGoal: number;
+  themeColor: HabitColor;
+}
+
+export interface Achievement {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  category: 'streak' | 'total' | 'time' | 'mastery' | 'consistency';
+  tier: 'bronze' | 'silver' | 'gold' | 'diamond';
+  target: number;
+  currentValue: number;
+  isUnlocked: boolean;
+  unlockedAt?: string;
+  progressPercentage: number;
+}

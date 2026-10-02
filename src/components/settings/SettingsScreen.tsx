@@ -19,8 +19,12 @@ import {
   Tag,
   Settings2,
   Info,
+  FileJson,
+  Share2,
+  User,
+  Clock,
 } from 'lucide-react';
-import { AppSettings, HabitColor, Category } from '../../types';
+import { AppSettings, HabitColor, Category, Habit, UserProfile } from '../../types';
 import { storage } from '../../storage/storage';
 import { COLOR_OPTIONS, COLOR_SCHEMES } from '../common/ColorMap';
 import { PWAInstallButton } from '../common/PWAInstallButton';
@@ -28,12 +32,17 @@ import {
   requestNotificationPermission,
   sendHabitNotification,
   getNotificationStatus,
+  testHabitReminder,
 } from '../../utils/notifications';
 import { sound, triggerHaptic } from '../../utils/sound';
+import { DataTransferModal } from './DataTransferModal';
 
 interface Props {
   settings: AppSettings;
+  habits?: Habit[];
   categories?: Category[];
+  profile?: UserProfile;
+  onOpenProfile?: () => void;
   onOpenCategoryManager?: () => void;
   onUpdateSettings: (settings: Partial<AppSettings>) => void;
   onRefreshData: () => void;
@@ -41,7 +50,10 @@ interface Props {
 
 export const SettingsScreen: React.FC<Props> = ({
   settings,
+  habits = [],
   categories = [],
+  profile,
+  onOpenProfile,
   onOpenCategoryManager,
   onUpdateSettings,
   onRefreshData,
@@ -50,6 +62,7 @@ export const SettingsScreen: React.FC<Props> = ({
   const [feedbackMessage, setFeedbackMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isDataModalOpen, setIsDataModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const showFeedback = (type: 'success' | 'error', text: string) => {
@@ -73,12 +86,12 @@ export const SettingsScreen: React.FC<Props> = ({
   const handleToggleNotifications = async () => {
     if (!settings.notificationsEnabled) {
       const perm = await requestNotificationPermission();
-      setNotificationState(getNotificationStatus());
+      setNotificationState(perm as any);
       if (perm === 'granted') {
         onUpdateSettings({ notificationsEnabled: true });
         sendHabitNotification(
           'HabitPulse Notifications Active! ✨',
-          'You will receive reminders when it’s time to check off your scheduled habits.'
+          'You will receive push reminders when it’s time to check off your scheduled habits.'
         );
         showFeedback('success', 'Notifications enabled!');
       } else {
@@ -93,34 +106,58 @@ export const SettingsScreen: React.FC<Props> = ({
   const handleTestNotification = () => {
     sendHabitNotification(
       '🔥 HabitPulse Reminder Test',
-      'Test notification working! Stay consistent with your daily goals.'
+      'Scheduled notification active! Stay consistent with your daily goals.'
     );
     showFeedback('success', 'Test notification sent!');
   };
 
-  // Export Data
+  // Direct quick Export Data
   const handleExportData = async () => {
     try {
       setIsExporting(true);
       const jsonString = await storage.exportAllData();
+      const filename = `habitpulse-backup-${new Date().toISOString().slice(0, 10)}.json`;
       const blob = new Blob([jsonString], { type: 'application/json' });
+
+      // Mobile share sheet if supported
+      if (
+        navigator.canShare &&
+        navigator.canShare({
+          files: [new File([blob], filename, { type: 'application/json' })],
+        })
+      ) {
+        const file = new File([blob], filename, { type: 'application/json' });
+        await navigator.share({
+          title: 'HabitPulse Backup',
+          text: 'My HabitPulse habits & streaks backup.',
+          files: [file],
+        });
+        showFeedback('success', 'Backup shared successfully!');
+        triggerHaptic('complete', settings.hapticsEnabled);
+        return;
+      }
+
+      // Browser download
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `habitpulse-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      triggerHaptic('complete', settings.hapticsEnabled);
       showFeedback('success', 'Data exported successfully as JSON!');
-    } catch (e) {
-      showFeedback('error', 'Failed to export backup data.');
+    } catch (e: unknown) {
+      if ((e as Error)?.name !== 'AbortError') {
+        showFeedback('error', 'Failed to export backup data.');
+      }
     } finally {
       setIsExporting(false);
     }
   };
 
-  // Import Data
+  // Direct quick Import Data
   const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -130,12 +167,14 @@ export const SettingsScreen: React.FC<Props> = ({
       const res = await storage.importData(text);
       if (res.success) {
         showFeedback('success', res.message);
+        triggerHaptic('celebration', settings.hapticsEnabled);
+        sound.playCelebration(settings.soundEnabled);
         onRefreshData();
       } else {
         showFeedback('error', res.message);
       }
-    } catch (err) {
-      showFeedback('error', 'Failed to read file.');
+    } catch {
+      showFeedback('error', 'Failed to read backup file.');
     } finally {
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
@@ -147,6 +186,7 @@ export const SettingsScreen: React.FC<Props> = ({
     onRefreshData();
     showFeedback('success', 'Starter demo habits & past 30-day logs loaded!');
     sound.playCelebration(settings.soundEnabled);
+    triggerHaptic('celebration', settings.hapticsEnabled);
   };
 
   // Reset all
@@ -156,6 +196,8 @@ export const SettingsScreen: React.FC<Props> = ({
     setShowResetConfirm(false);
     showFeedback('success', 'All data has been cleared.');
   };
+
+  const habitsWithReminders = habits.filter((h) => !h.archived && h.reminderEnabled && h.reminderTime);
 
   return (
     <div className="space-y-5 pb-16">
@@ -179,6 +221,35 @@ export const SettingsScreen: React.FC<Props> = ({
 
       {/* PWA Install Banner */}
       <PWAInstallButton variant="settings" />
+
+      {/* Profile Persona Banner */}
+      {profile && onOpenProfile && (
+        <div className="rounded-3xl border border-slate-200/90 dark:border-slate-800/90 bg-white dark:bg-slate-900 p-5 shadow-sm space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 text-2xl border border-indigo-100 dark:border-indigo-900">
+                <span>{profile.avatar || '🦁'}</span>
+              </div>
+              <div>
+                <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <span>{profile.name}</span>
+                </h3>
+                <p className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
+                  {profile.title}
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={onOpenProfile}
+              className="flex items-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 text-xs font-bold shadow-xs transition cursor-pointer"
+            >
+              <User className="h-3.5 w-3.5" />
+              <span>Edit Profile</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Custom Categories Section */}
       <div className="rounded-3xl border border-slate-200/90 dark:border-slate-800/90 bg-white dark:bg-slate-900 p-5 shadow-sm space-y-4">
@@ -249,6 +320,7 @@ export const SettingsScreen: React.FC<Props> = ({
             <Sun className="h-4 w-4" />
             <span>Light</span>
           </button>
+
           <button
             onClick={() => handleThemeChange('dark')}
             className={`flex items-center justify-center gap-2 py-2 text-xs font-bold rounded-xl transition cursor-pointer ${
@@ -260,6 +332,7 @@ export const SettingsScreen: React.FC<Props> = ({
             <Moon className="h-4 w-4" />
             <span>Dark</span>
           </button>
+
           <button
             onClick={() => handleThemeChange('system')}
             className={`flex items-center justify-center gap-2 py-2 text-xs font-bold rounded-xl transition cursor-pointer ${
@@ -273,25 +346,30 @@ export const SettingsScreen: React.FC<Props> = ({
           </button>
         </div>
 
-        {/* Accent Color Palette */}
-        <div className="pt-2">
-          <label className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-1.5">
-            <Palette className="h-3.5 w-3.5 text-indigo-500" />
+        {/* Accent color picker */}
+        <div className="pt-2 space-y-2">
+          <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+            <Palette className="h-3.5 w-3.5 text-slate-400" />
             <span>Accent Highlight</span>
           </label>
-          <div className="grid grid-cols-8 gap-2">
-            {COLOR_OPTIONS.map((c) => {
-              const scheme = COLOR_SCHEMES[c];
-              const isSelected = settings.accentColor === c;
+          <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+            {COLOR_OPTIONS.map((colorKey) => {
+              const scheme = COLOR_SCHEMES[colorKey];
+              const isSelected = settings.accentColor === colorKey;
               return (
                 <button
-                  key={c}
-                  onClick={() => handleAccentChange(c)}
-                  className={`h-8 rounded-xl ${scheme.bg} flex items-center justify-center transition-all cursor-pointer ${
-                    isSelected ? 'ring-2 ring-offset-2 ring-indigo-500 scale-105' : 'opacity-70 hover:opacity-100'
+                  key={colorKey}
+                  onClick={() => handleAccentChange(colorKey)}
+                  className={`h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
+                    scheme.bg
+                  } ${
+                    isSelected
+                      ? 'ring-2 ring-offset-2 ring-indigo-500 dark:ring-offset-slate-900 scale-105 shadow-md'
+                      : 'opacity-80 hover:opacity-100 hover:scale-102'
                   }`}
+                  title={scheme.label}
                 >
-                  {isSelected && <span className="h-2 w-2 rounded-full bg-white" />}
+                  {isSelected && <CheckCircle className="h-4 w-4 text-white" />}
                 </button>
               );
             })}
@@ -299,19 +377,26 @@ export const SettingsScreen: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* Notifications & Reminders */}
+      {/* Reminders & Push Notifications */}
       <div className="rounded-3xl border border-slate-200/90 dark:border-slate-800/90 bg-white dark:bg-slate-900 p-5 shadow-sm space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400">
-              <BellRing className="h-5 w-5" />
-            </div>
+        <div>
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+            Reminders & Notifications API
+          </h3>
+          <p className="text-[11px] text-slate-400">
+            Scheduled push notifications triggered at your chosen habit times
+          </p>
+        </div>
+
+        <div className="flex items-center justify-between pt-1">
+          <div className="flex items-center gap-2">
+            <Bell className="h-4 w-4 text-slate-400" />
             <div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                Browser Reminders
-              </h3>
-              <p className="text-[11px] text-slate-400">
-                Receive scheduled habit alerts
+              <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                Scheduled Habit Notifications
+              </h4>
+              <p className="text-[10px] text-slate-400">
+                Receive browser alerts when your habits are due
               </p>
             </div>
           </div>
@@ -330,17 +415,53 @@ export const SettingsScreen: React.FC<Props> = ({
           </button>
         </div>
 
+        {/* Scheduled Habits Summary & Individual Test Reminders */}
         {settings.notificationsEnabled && (
-          <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-              Notification API: <strong className="text-emerald-600">Active</strong>
-            </span>
-            <button
-              onClick={handleTestNotification}
-              className="text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50 px-3 py-1.5 rounded-xl hover:bg-indigo-100 dark:hover:bg-indigo-900 transition cursor-pointer"
-            >
-              Test Notification 🔔
-            </button>
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                Active Habits with Reminders: <strong className="text-indigo-600 dark:text-indigo-400">{habitsWithReminders.length}</strong>
+              </span>
+              <button
+                onClick={handleTestNotification}
+                className="text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50 px-3 py-1.5 rounded-xl hover:bg-indigo-100 dark:hover:bg-indigo-900 transition cursor-pointer"
+              >
+                Test Alert 🔔
+              </button>
+            </div>
+
+            {/* List of habits with configured reminder alarms */}
+            {habitsWithReminders.length > 0 && (
+              <div className="space-y-1.5 pt-1">
+                {habitsWithReminders.map((habit) => (
+                  <div
+                    key={habit.id}
+                    className="flex items-center justify-between rounded-xl bg-slate-50 dark:bg-slate-800/50 p-2.5 border border-slate-100 dark:border-slate-800 text-xs"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">{habit.emoji}</span>
+                      <span className="font-bold text-slate-800 dark:text-slate-200 truncate max-w-[140px]">
+                        {habit.name}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1 font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50 px-2 py-0.5 rounded-md text-[10px]">
+                        <Clock className="h-3 w-3" />
+                        <span>{habit.reminderTime}</span>
+                      </span>
+                      <button
+                        onClick={() => testHabitReminder(habit)}
+                        title="Send sample notification for this habit"
+                        className="text-[10px] font-bold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 p-1 cursor-pointer"
+                      >
+                        Preview
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -413,17 +534,28 @@ export const SettingsScreen: React.FC<Props> = ({
 
       {/* Data Management: Export / Import / Seed / Reset */}
       <div className="rounded-3xl border border-slate-200/90 dark:border-slate-800/90 bg-white dark:bg-slate-900 p-5 shadow-sm space-y-4">
-        <div>
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-            Data & Backup
-          </h3>
-          <p className="text-[11px] text-slate-400">
-            Stored locally in your browser (no account needed)
-          </p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+              Data & Backup
+            </h3>
+            <p className="text-[11px] text-slate-400">
+              Stored locally on this device • Export or migrate anytime
+            </p>
+          </div>
+
+          <button
+            onClick={() => setIsDataModalOpen(true)}
+            className="flex items-center gap-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 px-3 py-1.5 text-xs font-bold hover:bg-indigo-100 dark:hover:bg-indigo-900 transition cursor-pointer"
+          >
+            <FileJson className="h-3.5 w-3.5" />
+            <span>Transfer Center</span>
+          </button>
         </div>
 
+        {/* Quick Export/Import Buttons */}
         <div className="grid grid-cols-2 gap-2">
-          {/* Export JSON */}
+          {/* Quick Export JSON */}
           <button
             onClick={handleExportData}
             disabled={isExporting}
@@ -433,7 +565,7 @@ export const SettingsScreen: React.FC<Props> = ({
             <span>Export JSON</span>
           </button>
 
-          {/* Import JSON */}
+          {/* Quick Import JSON */}
           <button
             onClick={() => fileInputRef.current?.click()}
             className="flex items-center justify-center gap-2 rounded-2xl bg-slate-100 dark:bg-slate-800 py-3 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer"
@@ -498,6 +630,17 @@ export const SettingsScreen: React.FC<Props> = ({
           100% Client-side • Works Offline • Privacy-First
         </p>
       </div>
+
+      {/* Full-Featured Data Transfer Modal */}
+      <DataTransferModal
+        isOpen={isDataModalOpen}
+        onClose={() => setIsDataModalOpen(false)}
+        habits={habits}
+        categories={categories}
+        onDataRestored={onRefreshData}
+        hapticsEnabled={settings.hapticsEnabled}
+        soundEnabled={settings.soundEnabled}
+      />
 
       {/* Reset Confirmation Dialog */}
       {showResetConfirm && (

@@ -40,7 +40,12 @@ export async function requestNotificationPermission(): Promise<NotificationPermi
   }
 }
 
-export function sendHabitNotification(title: string, body: string, icon = '/pwa-192x192.png') {
+export function sendHabitNotification(
+  title: string,
+  body: string,
+  icon = '/pwa-192x192.png',
+  tag = 'habit-reminder'
+) {
   if (typeof window === 'undefined' || !('Notification' in window)) return;
   if (Notification.permission !== 'granted') return;
 
@@ -49,15 +54,17 @@ export function sendHabitNotification(title: string, body: string, icon = '/pwa-
       body,
       icon,
       badge: '/favicon.ico',
-      tag: 'habit-reminder',
+      tag,
     };
 
     if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-      navigator.serviceWorker.ready.then((reg) => {
-        reg.showNotification(title, options);
-      }).catch(() => {
-        new Notification(title, options);
-      });
+      navigator.serviceWorker.ready
+        .then((reg) => {
+          reg.showNotification(title, options);
+        })
+        .catch(() => {
+          new Notification(title, options);
+        });
     } else {
       new Notification(title, options);
     }
@@ -97,10 +104,24 @@ export function checkHabitReminders(habits: Habit[], logs: HabitLogs) {
 
       if (scheduled && !completed) {
         sendHabitNotification(
-          `Time for: ${habit.name} ${habit.emoji}`,
-          `Keep your streak alive! Tap to check off today's habit.`
+          `${habit.emoji} Time for ${habit.name}`,
+          `Keep your streak alive! Tap to mark your habit complete for today.`,
+          '/pwa-192x192.png',
+          `habit-${habit.id}`
         );
       }
     }
   }
+}
+
+/**
+ * Quick preview test for a specific habit's reminder
+ */
+export function testHabitReminder(habit: Habit) {
+  sendHabitNotification(
+    `${habit.emoji} Scheduled Reminder: ${habit.name}`,
+    `This is a test preview of your scheduled reminder at ${habit.reminderTime || 'set time'}.`,
+    '/pwa-192x192.png',
+    `test-${habit.id}`
+  );
 }

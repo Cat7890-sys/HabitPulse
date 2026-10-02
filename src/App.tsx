@@ -11,6 +11,7 @@ import { HabitFormModal } from './components/habits/HabitFormModal';
 import { CategoryManagerModal } from './components/habits/CategoryManagerModal';
 import { DeleteConfirmModal } from './components/habits/DeleteConfirmModal';
 import { CelebrationModal } from './components/today/CelebrationModal';
+import { ProfileModal } from './components/profile/ProfileModal';
 import { OfflineIndicator } from './components/common/OfflineIndicator';
 import { Sparkles } from 'lucide-react';
 
@@ -18,6 +19,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('today');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [habitToEdit, setHabitToEdit] = useState<Habit | null>(null);
   const [habitToDelete, setHabitToDelete] = useState<Habit | null>(null);
 
@@ -26,6 +28,7 @@ export default function App() {
     categories,
     logs,
     settings,
+    profile,
     isLoading,
     selectedDateKey,
     setSelectedDateKey,
@@ -39,6 +42,7 @@ export default function App() {
     updateCategory,
     deleteCategory,
     updateSettings,
+    updateProfile,
     refreshData,
     showCelebrationModal,
     setShowCelebrationModal,
@@ -46,6 +50,21 @@ export default function App() {
 
   // Pending habits for badge counter
   const pendingTodayCount = Math.max(0, todayProgress.total - todayProgress.completed);
+
+  // Compute total completions and best streak for profile XP/level
+  const totalCompletions = React.useMemo(() => {
+    let count = 0;
+    Object.values(logs).forEach((habitDateMap) => {
+      Object.values(habitDateMap).forEach((val) => {
+        if (val) count++;
+      });
+    });
+    return count;
+  }, [logs]);
+
+  const bestOverallStreak = React.useMemo(() => {
+    return computedStats.reduce((max, s) => Math.max(max, s.bestStreak), 0);
+  }, [computedStats]);
 
   const handleOpenAdd = () => {
     setHabitToEdit(null);
@@ -89,7 +108,9 @@ export default function App() {
       <Header
         activeTab={activeTab}
         computedStats={computedStats}
+        profile={profile}
         onOpenAddModal={handleOpenAdd}
+        onOpenProfileModal={() => setIsProfileModalOpen(true)}
       />
 
       {/* Main Content Area - Mobile constrained container */}
@@ -128,13 +149,18 @@ export default function App() {
             categories={categories}
             logs={logs}
             computedStats={computedStats}
+            profile={profile}
+            onOpenProfile={() => setIsProfileModalOpen(true)}
           />
         )}
 
         {activeTab === 'settings' && (
           <SettingsScreen
             settings={settings}
+            habits={habits}
             categories={categories}
+            profile={profile}
+            onOpenProfile={() => setIsProfileModalOpen(true)}
             onOpenCategoryManager={() => setIsCategoryModalOpen(true)}
             onUpdateSettings={updateSettings}
             onRefreshData={refreshData}
@@ -171,6 +197,16 @@ export default function App() {
         onAddCategory={addCategory}
         onUpdateCategory={updateCategory}
         onDeleteCategory={deleteCategory}
+      />
+
+      {/* Profile Maker & Customization Modal */}
+      <ProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        profile={profile}
+        onSaveProfile={updateProfile}
+        totalCompletions={totalCompletions}
+        maxStreak={bestOverallStreak}
       />
 
       {/* Delete Confirmation Modal */}

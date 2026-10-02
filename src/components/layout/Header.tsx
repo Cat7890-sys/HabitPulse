@@ -1,24 +1,31 @@
 import React from 'react';
-import { Flame, Plus, Sparkles } from 'lucide-react';
-import { ActiveTab, HabitComputedStats } from '../../types';
+import { Flame, Plus, Sparkles, User } from 'lucide-react';
+import { ActiveTab, HabitComputedStats, UserProfile } from '../../types';
 import { PWAInstallButton } from '../common/PWAInstallButton';
+import { COLOR_SCHEMES } from '../common/ColorMap';
 
 interface Props {
   activeTab: ActiveTab;
   computedStats: HabitComputedStats[];
+  profile?: UserProfile;
   onOpenAddModal: () => void;
+  onOpenProfileModal?: () => void;
 }
 
 export const Header: React.FC<Props> = ({
   activeTab,
   computedStats,
+  profile,
   onOpenAddModal,
+  onOpenProfileModal,
 }) => {
   // Compute max active streak among all habits
   const topStreak = computedStats.reduce(
     (max, stat) => Math.max(max, stat.currentStreak),
     0
   );
+
+  const scheme = profile ? COLOR_SCHEMES[profile.themeColor || 'indigo'] || COLOR_SCHEMES.indigo : COLOR_SCHEMES.indigo;
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-200/80 dark:border-slate-800/80 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md pt-safe">
@@ -35,7 +42,7 @@ export const Header: React.FC<Props> = ({
             <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 -mt-0.5">
               {activeTab === 'today' && 'Daily Progress'}
               {activeTab === 'habits' && 'Manage Habits'}
-              {activeTab === 'stats' && 'Insights & Streaks'}
+              {activeTab === 'stats' && 'Insights & Milestones'}
               {activeTab === 'settings' && 'App Preferences'}
             </p>
           </div>
@@ -54,6 +61,17 @@ export const Header: React.FC<Props> = ({
               <Flame className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
               <span>{topStreak}</span>
             </div>
+          )}
+
+          {/* User Profile Avatar Icon */}
+          {profile && onOpenProfileModal && (
+            <button
+              onClick={onOpenProfileModal}
+              title={`Profile: ${profile.name}`}
+              className={`flex h-9 w-9 items-center justify-center rounded-xl text-lg border transition hover:scale-105 active:scale-95 cursor-pointer ${scheme.bgSubtle}`}
+            >
+              <span>{profile.avatar || '🦁'}</span>
+            </button>
           )}
 
           {/* Quick Add Button */}

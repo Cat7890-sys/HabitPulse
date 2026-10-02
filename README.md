@@ -28,30 +28,33 @@ HabitPulse is a minimalist, privacy-first, offline Progressive Web App (PWA) bui
      - **X Times / Week**: Flexible target (e.g. 3x per week) with live weekly dot progress indicators.
    - Optional time-based reminders.
 
-3. **Streak & Metric Engine**:
-   - Current streak and all-time best streak calculations per habit.
-   - Missed scheduled days reset the streak.
-   - Weekdays and X-times/week habits calculate streaks based on scheduled periods without penalizing unscheduled off-days.
-   - Overall completion rate percentage based on scheduled days since creation.
+3. **Profile Maker & Gamification**:
+   - **Profile Persona Creator**: Custom avatar emoji presets (24+ curated icons), customizable display name, daily motto/bio, and habit honorific titles (e.g. *Master of Routines*, *Atomic Builder*).
+   - **Level & XP Engine**: Automatically calculates user XP from lifetime check-ins and streaks with level progression bars.
+   - Profile avatar trigger embedded in the header and full profile card in Stats and Settings.
 
-4. **Stats & Visualizations**:
-   - **Weekly Goal Progress Widget**: Category-by-category bar chart comparing current weekly check-in totals against user-defined weekly targets (Monday through Sunday) with celebration status and per-habit breakdowns.
+4. **Achievements & Milestones System**:
+   - 15 tiered milestone badges (Bronze, Silver, Gold, Diamond) tracking streaks (e.g., *5-Day Streak*, *One Week Warrior*, *Habit Master*), time routines (*Early Bird*, *Night Owl*), consistency (*Flawless Trio*), and volume (*Centurion*).
+   - Real-time progress bars, filter tabs (*All, Unlocked, Locked*), and interactive achievement detail cards.
+
+5. **Stats & Visualizations**:
+   - **Weekly Goal Progress Widget**: Category-by-category bar chart comparing current weekly check-in totals against user-defined weekly targets with celebration badges.
    - **90-Day Calendar Heatmap**: GitHub-style activity grid with interactive tooltips and intensity levels.
    - **7-Day Performance Chart**: Daily completion trends and averages.
    - **KPI Summary**: Total lifetime check-ins, record streaks, and active habit counts.
 
-5. **Browser Reminders**:
-   - Polite browser Notification API permissions.
-   - Periodic reminder checks that trigger notifications at your set habit times.
-   - Built-in test notification button in Settings.
+6. **Scheduled Push Notifications & Reminders**:
+   - Web Notifications API integration with Service Worker support.
+   - Real-time minute-by-minute alarm checker matching habit reminder times to send prompt push alerts.
+   - Settings reminder dashboard with habit alarm overview and direct per-habit preview test notifications.
 
-6. **Settings & Tactile Feedback**:
+6. **Settings & Data Portability**:
+   - **Data Transfer Center**: Mobile-first backup system supporting Web Share API (`navigator.share`), instant `.json` downloads, and direct clipboard copying.
+   - **Flexible Import**: Upload JSON files or paste raw JSON text directly with schema validation, backup contents preview, and a choice between **Replace All** or **Merge** modes.
    - Web Vibration API integration: Crisp physical haptic patterns for habit completion (`[18ms, 45ms, 28ms]`), unchecking (`10ms`), and daily goal celebrations (`[30ms, 50ms, 40ms, 50ms, 60ms]`).
-   - Dark / Light / System theme switching.
-   - Accent color picker.
+   - Dark / Light / System theme switching and 8 accent highlight colors.
    - Sound effects and tactile vibration toggle.
-   - Full JSON Export & Import backup mechanism.
-   - One-tap demo starter data loading & factory reset.
+   - One-tap demo starter data loading & factory reset safety dialog.
 
 7. **PWA & Offline-First**:
    - Installable on iOS Safari, Android, and Desktop browsers.
