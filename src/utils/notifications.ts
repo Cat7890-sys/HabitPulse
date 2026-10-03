@@ -1,18 +1,11 @@
 /**
  * @file notifications.ts
- * Browser Notification API helper for habit reminders with base URL support.
+ * Browser Notification API helper for habit reminders.
  */
 
 import { Habit, HabitLogs } from '../types';
 import { getTodayKey } from './date';
 import { isHabitScheduledOnDate } from './streaks';
-
-const getAssetUrl = (relativePath: string) => {
-  const base = import.meta.env.BASE_URL || '/';
-  const cleanBase = base.endsWith('/') ? base : `${base}/`;
-  const cleanPath = relativePath.startsWith('/') ? relativePath.slice(1) : relativePath;
-  return `${cleanBase}${cleanPath}`;
-};
 
 export interface NotificationStatus {
   isSupported: boolean;
@@ -50,20 +43,17 @@ export async function requestNotificationPermission(): Promise<NotificationPermi
 export function sendHabitNotification(
   title: string,
   body: string,
-  icon?: string,
+  icon = '/pwa-192x192.png',
   tag = 'habit-reminder'
 ) {
   if (typeof window === 'undefined' || !('Notification' in window)) return;
   if (Notification.permission !== 'granted') return;
 
-  const resolvedIcon = icon || getAssetUrl('pwa-192x192.png');
-  const resolvedBadge = getAssetUrl('favicon.ico');
-
   try {
     const options: NotificationOptions = {
       body,
-      icon: resolvedIcon,
-      badge: resolvedBadge,
+      icon,
+      badge: '/favicon.ico',
       tag,
     };
 
@@ -116,7 +106,7 @@ export function checkHabitReminders(habits: Habit[], logs: HabitLogs) {
         sendHabitNotification(
           `${habit.emoji} Time for ${habit.name}`,
           `Keep your streak alive! Tap to mark your habit complete for today.`,
-          getAssetUrl('pwa-192x192.png'),
+          '/pwa-192x192.png',
           `habit-${habit.id}`
         );
       }
@@ -131,7 +121,7 @@ export function testHabitReminder(habit: Habit) {
   sendHabitNotification(
     `${habit.emoji} Scheduled Reminder: ${habit.name}`,
     `This is a test preview of your scheduled reminder at ${habit.reminderTime || 'set time'}.`,
-    getAssetUrl('pwa-192x192.png'),
+    '/pwa-192x192.png',
     `test-${habit.id}`
   );
 }

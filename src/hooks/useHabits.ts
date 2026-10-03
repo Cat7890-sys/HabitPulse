@@ -1,26 +1,19 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import confetti from 'canvas-confetti';
 import { Habit, HabitLogs, AppSettings, HabitComputedStats, Category, UserProfile } from '../types';
-import {
-  storage,
-  DEFAULT_SETTINGS,
-  DEFAULT_CATEGORIES,
-  DEFAULT_PROFILE,
-  INITIAL_HABITS,
-  generateStarterLogs,
-} from '../storage/storage';
+import { storage, DEFAULT_SETTINGS, DEFAULT_CATEGORIES, DEFAULT_PROFILE } from '../storage/storage';
 import { getTodayKey } from '../utils/date';
 import { computeHabitStats, isHabitScheduledOnDate } from '../utils/streaks';
 import { sound, triggerHaptic } from '../utils/sound';
 import { checkHabitReminders } from '../utils/notifications';
 
 export function useHabits() {
-  const [habits, setHabits] = useState<Habit[]>(INITIAL_HABITS);
+  const [habits, setHabits] = useState<Habit[]>([]);
   const [categories, setCategories] = useState<Category[]>(DEFAULT_CATEGORIES);
-  const [logs, setLogs] = useState<HabitLogs>(() => generateStarterLogs(INITIAL_HABITS));
+  const [logs, setLogs] = useState<HabitLogs>({});
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [profile, setProfile] = useState<UserProfile>(DEFAULT_PROFILE);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedDateKey, setSelectedDateKey] = useState<string>(getTodayKey());
   const [showCelebrationModal, setShowCelebrationModal] = useState(false);
 
@@ -34,13 +27,13 @@ export function useHabits() {
         storage.getSettings(),
         storage.getProfile(),
       ]);
-      if (savedHabits && savedHabits.length > 0) setHabits(savedHabits);
-      if (savedLogs) setLogs(savedLogs);
-      if (savedCategories && savedCategories.length > 0) setCategories(savedCategories);
-      if (savedSettings) setSettings(savedSettings);
-      if (savedProfile) setProfile(savedProfile);
+      setHabits(savedHabits);
+      setLogs(savedLogs);
+      setCategories(savedCategories);
+      setSettings(savedSettings);
+      setProfile(savedProfile);
     } catch (e) {
-      console.error('Failed to load habit data from storage:', e);
+      console.error('Failed to load habit data:', e);
     } finally {
       setIsLoading(false);
     }

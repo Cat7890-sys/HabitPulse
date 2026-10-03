@@ -1,7 +1,8 @@
 /**
  * @file storage.ts
- * Hardened storage layer wrapper around localStorage with in-memory fallback.
- * Guarantees zero runtime crashes or white-screens in restricted iframes or private browsing.
+ * Storage layer wrapper around localStorage.
+ * Provides an async interface so a backend or cloud database (e.g. Firebase/Cloud SQL)
+ * can easily be plugged in without refactoring UI components.
  */
 
 import { Habit, HabitLogs, AppSettings, Category, UserProfile } from '../types';
@@ -112,7 +113,7 @@ export const INITIAL_HABITS: Habit[] = [
 ];
 
 /**
- * Generates initial demo completion history for starter habits.
+ * Generates initial demo completion history for starter habits so heatmaps and streak counters look realistic.
  */
 export function generateStarterLogs(habits: Habit[]): HabitLogs {
   const logs: HabitLogs = {};
@@ -143,58 +144,20 @@ export interface BackupData {
   settings: AppSettings;
 }
 
-// In-memory memory map in case localStorage is blocked or throws
-const memoryStore = new Map<string, string>();
-
-function safeGetItem(key: string): string | null {
-  try {
-    if (typeof window !== 'undefined' && 'localStorage' in window) {
-      const val = window.localStorage.getItem(key);
-      if (val !== null) return val;
-    }
-  } catch {}
-  return memoryStore.get(key) || null;
-}
-
-function safeSetItem(key: string, value: string): void {
-  try {
-    memoryStore.set(key, value);
-    if (typeof window !== 'undefined' && 'localStorage' in window) {
-      window.localStorage.setItem(key, value);
-    }
-  } catch {}
-}
-
-function safeRemoveItem(key: string): void {
-  try {
-    memoryStore.delete(key);
-    if (typeof window !== 'undefined' && 'localStorage' in window) {
-      window.localStorage.removeItem(key);
-    }
-  } catch {}
-}
-
-function safeDispatchEvent(name: string, detail?: unknown): void {
-  try {
-    if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
-      window.dispatchEvent(new CustomEvent(name, { detail }));
-    }
-  } catch {}
-}
-
 export const storage = {
   /**
    * Loads user profile from storage.
    */
   async getProfile(): Promise<UserProfile> {
     try {
-      const raw = safeGetItem(STORAGE_KEYS.PROFILE);
+      const raw = localStorage.getItem(STORAGE_KEYS.PROFILE);
       if (!raw) {
-        safeSetItem(STORAGE_KEYS.PROFILE, JSON.stringify(DEFAULT_PROFILE));
+        await this.saveProfile(DEFAULT_PROFILE);
         return DEFAULT_PROFILE;
       }
       return { ...DEFAULT_PROFILE, ...JSON.parse(raw) };
-    } catch {
+    } catch (e) {
+      console.error('Error loading profile from localStorage:', e);
       return DEFAULT_PROFILE;
     }
   },
@@ -204,9 +167,11 @@ export const storage = {
    */
   async saveProfile(profile: UserProfile): Promise<void> {
     try {
-      safeSetItem(STORAGE_KEYS.PROFILE, JSON.stringify(profile));
-      safeDispatchEvent('habitpulse-profile-changed', profile);
-    } catch {}
+      localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(profile));
+      window.dispatchEvent(new CustomEvent('habitpulse-profile-changed', { detail: profile }));
+    } catch (e) {
+      console.error('Error saving profile to localStorage:', e);
+    }
   },
 
   /**
@@ -214,13 +179,14 @@ export const storage = {
    */
   async getCategories(): Promise<Category[]> {
     try {
-      const raw = safeGetItem(STORAGE_KEYS.CATEGORIES);
+      const raw = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
       if (!raw) {
-        safeSetItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(DEFAULT_CATEGORIES));
+        await this.saveCategories(DEFAULT_CATEGORIES);
         return DEFAULT_CATEGORIES;
       }
       return JSON.parse(raw);
-    } catch {
+    } catch (e) {
+      console.error('Error loading categories from localStorage:', e);
       return DEFAULT_CATEGORIES;
     }
   },
@@ -230,9 +196,11 @@ export const storage = {
    */
   async saveCategories(categories: Category[]): Promise<void> {
     try {
-      safeSetItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
-      safeDispatchEvent('habitpulse-categories-changed', categories);
-    } catch {}
+      localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
+      window.dispatchEvent(new CustomEvent('habitpulse-categories-changed', { detail: categories }));
+    } catch (e) {
+      console.error('Error saving categories to localStorage:', e);
+    }
   },
 
   /**
@@ -240,18 +208,19 @@ export const storage = {
    */
   async getHabits(): Promise<Habit[]> {
     try {
-      const raw = safeGetItem(STORAGE_KEYS.HABITS);
+      const raw = localStorage.getItem(STORAGE_KEYS.HABITS);
       if (!raw) {
         const initial = INITIAL_HABITS;
-        safeSetItem(STORAGE_KEYS.HABITS, JSON.stringify(initial));
+        await this.saveHabits(initial);
         const starterLogs = generateStarterLogs(initial);
-        safeSetItem(STORAGE_KEYS.LOGS, JSON.stringify(starterLogs));
-        safeSetItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(DEFAULT_CATEGORIES));
-        safeSetItem(STORAGE_KEYS.PROFILE, JSON.stringify(DEFAULT_PROFILE));
+        await this.saveLogs(starterLogs);
+        await this.saveCategories(DEFAULT_CATEGORIES);
+        await this.saveProfile(DEFAULT_PROFILE);
         return initial;
       }
       return JSON.parse(raw);
-    } catch {
+    } catch (e) {
+      console.error('Error loading habits from localStorage:', e);
       return INITIAL_HABITS;
     }
   },
@@ -261,9 +230,11 @@ export const storage = {
    */
   async saveHabits(habits: Habit[]): Promise<void> {
     try {
-      safeSetItem(STORAGE_KEYS.HABITS, JSON.stringify(habits));
-      safeDispatchEvent('habitpulse-habits-changed', habits);
-    } catch {}
+      localStorage.setItem(STORAGE_KEYS.HABITS, JSON.stringify(habits));
+      window.dispatchEvent(new CustomEvent('habitpulse-habits-changed', { detail: habits }));
+    } catch (e) {
+      console.error('Error saving habits to localStorage:', e);
+    }
   },
 
   /**
@@ -271,14 +242,11 @@ export const storage = {
    */
   async getLogs(): Promise<HabitLogs> {
     try {
-      const raw = safeGetItem(STORAGE_KEYS.LOGS);
-      if (!raw) {
-        const initialLogs = generateStarterLogs(INITIAL_HABITS);
-        safeSetItem(STORAGE_KEYS.LOGS, JSON.stringify(initialLogs));
-        return initialLogs;
-      }
+      const raw = localStorage.getItem(STORAGE_KEYS.LOGS);
+      if (!raw) return {};
       return JSON.parse(raw);
-    } catch {
+    } catch (e) {
+      console.error('Error loading logs from localStorage:', e);
       return {};
     }
   },
@@ -288,9 +256,11 @@ export const storage = {
    */
   async saveLogs(logs: HabitLogs): Promise<void> {
     try {
-      safeSetItem(STORAGE_KEYS.LOGS, JSON.stringify(logs));
-      safeDispatchEvent('habitpulse-logs-changed', logs);
-    } catch {}
+      localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(logs));
+      window.dispatchEvent(new CustomEvent('habitpulse-logs-changed', { detail: logs }));
+    } catch (e) {
+      console.error('Error saving logs to localStorage:', e);
+    }
   },
 
   /**
@@ -298,13 +268,11 @@ export const storage = {
    */
   async getSettings(): Promise<AppSettings> {
     try {
-      const raw = safeGetItem(STORAGE_KEYS.SETTINGS);
-      if (!raw) {
-        safeSetItem(STORAGE_KEYS.SETTINGS, JSON.stringify(DEFAULT_SETTINGS));
-        return DEFAULT_SETTINGS;
-      }
+      const raw = localStorage.getItem(STORAGE_KEYS.SETTINGS);
+      if (!raw) return DEFAULT_SETTINGS;
       return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
-    } catch {
+    } catch (e) {
+      console.error('Error loading settings from localStorage:', e);
       return DEFAULT_SETTINGS;
     }
   },
@@ -314,9 +282,11 @@ export const storage = {
    */
   async saveSettings(settings: AppSettings): Promise<void> {
     try {
-      safeSetItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
-      safeDispatchEvent('habitpulse-settings-changed', settings);
-    } catch {}
+      localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+      window.dispatchEvent(new CustomEvent('habitpulse-settings-changed', { detail: settings }));
+    } catch (e) {
+      console.error('Error saving settings to localStorage:', e);
+    }
   },
 
   /**
@@ -371,7 +341,8 @@ export const storage = {
         message: `Successfully restored ${parsed.habits.length} habits, categories, profile, and logs!`,
         habitsCount: parsed.habits.length,
       };
-    } catch {
+    } catch (e) {
+      console.error('Error importing backup JSON:', e);
       return { success: false, message: 'Malformed JSON file. Please check your backup file.' };
     }
   },
@@ -380,12 +351,12 @@ export const storage = {
    * Clears all habits, categories, and logs from storage (factory reset).
    */
   async clearAllData(): Promise<void> {
-    safeRemoveItem(STORAGE_KEYS.HABITS);
-    safeRemoveItem(STORAGE_KEYS.LOGS);
-    safeRemoveItem(STORAGE_KEYS.CATEGORIES);
-    safeRemoveItem(STORAGE_KEYS.SETTINGS);
-    safeRemoveItem(STORAGE_KEYS.PROFILE);
-    safeDispatchEvent('habitpulse-reset');
+    localStorage.removeItem(STORAGE_KEYS.HABITS);
+    localStorage.removeItem(STORAGE_KEYS.LOGS);
+    localStorage.removeItem(STORAGE_KEYS.CATEGORIES);
+    localStorage.removeItem(STORAGE_KEYS.SETTINGS);
+    localStorage.removeItem(STORAGE_KEYS.PROFILE);
+    window.dispatchEvent(new CustomEvent('habitpulse-reset'));
   },
 
   /**
