@@ -1,11 +1,15 @@
 /**
  * @file storage.ts
- * Hardened storage layer wrapper around localStorage with in-memory fallback.
- * Guarantees zero runtime crashes or white-screens in restricted iframes or private browsing.
+ * Upgraded Local-First storage abstraction layer for HabitPulse.
+ * Saves locally immediately to IndexedDB, maintains legacy localStorage migration,
+ * enqueues mutations in syncQueue, and syncs asynchronously to Supabase cloud.
  */
 
 import { Habit, HabitLogs, AppSettings, Category, UserProfile } from '../types';
 import { getTodayKey, addDaysToDateKey } from '../utils/date';
+import { idbStorage } from './db';
+import { syncQueue } from '../sync/syncQueue';
+import { syncManager } from '../sync/syncManager';
 
 const STORAGE_KEYS = {
   HABITS: 'habitpulse_habits_v1',
@@ -111,9 +115,6 @@ export const INITIAL_HABITS: Habit[] = [
   },
 ];
 
-/**
- * Generates initial demo completion history for starter habits.
- */
 export function generateStarterLogs(habits: Habit[]): HabitLogs {
   const logs: HabitLogs = {};
   const today = getTodayKey();
@@ -143,37 +144,6 @@ export interface BackupData {
   settings: AppSettings;
 }
 
-// In-memory memory map in case localStorage is blocked or throws
-const memoryStore = new Map<string, string>();
-
-function safeGetItem(key: string): string | null {
-  try {
-    if (typeof window !== 'undefined' && 'localStorage' in window) {
-      const val = window.localStorage.getItem(key);
-      if (val !== null) return val;
-    }
-  } catch {}
-  return memoryStore.get(key) || null;
-}
-
-function safeSetItem(key: string, value: string): void {
-  try {
-    memoryStore.set(key, value);
-    if (typeof window !== 'undefined' && 'localStorage' in window) {
-      window.localStorage.setItem(key, value);
-    }
-  } catch {}
-}
-
-function safeRemoveItem(key: string): void {
-  try {
-    memoryStore.delete(key);
-    if (typeof window !== 'undefined' && 'localStorage' in window) {
-      window.localStorage.removeItem(key);
-    }
-  } catch {}
-}
-
 function safeDispatchEvent(name: string, detail?: unknown): void {
   try {
     if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
@@ -182,115 +152,188 @@ function safeDispatchEvent(name: string, detail?: unknown): void {
   } catch {}
 }
 
+// Fallback legacy localStorage helpers
+function safeGetLocalStorage(key: string): string | null {
+  try {
+    if (typeof window !== 'undefined' && 'localStorage' in window) {
+      return window.localStorage.getItem(key);
+    }
+  } catch {}
+  return null;
+}
+
 export const storage = {
   /**
-   * Loads user profile from storage.
+   * Loads user profile from local IndexedDB or legacy localStorage.
    */
   async getProfile(): Promise<UserProfile> {
     try {
-      const raw = safeGetItem(STORAGE_KEYS.PROFILE);
-      if (!raw) {
-        safeSetItem(STORAGE_KEYS.PROFILE, JSON.stringify(DEFAULT_PROFILE));
-        return DEFAULT_PROFILE;
+      let profile = await idbStorage.getProfile();
+      if (!profile) {
+        const raw = safeGetLocalStorage(STORAGE_KEYS.PROFILE);
+        if (raw) {
+          profile = { ...DEFAULT_PROFILE, ...JSON.parse(raw) };
+        } else {
+          profile = DEFAULT_PROFILE;
+        }
+        await idbStorage.saveProfile(profile);
       }
-      return { ...DEFAULT_PROFILE, ...JSON.parse(raw) };
+      return profile;
     } catch {
       return DEFAULT_PROFILE;
     }
   },
 
   /**
-   * Saves user profile to storage.
+   * Saves user profile locally and enqueues cloud sync.
    */
   async saveProfile(profile: UserProfile): Promise<void> {
     try {
-      safeSetItem(STORAGE_KEYS.PROFILE, JSON.stringify(profile));
+      await idbStorage.saveProfile(profile);
+      await syncQueue.enqueue('profile', 'current', 'UPDATE', profile);
+      syncManager.processQueue();
       safeDispatchEvent('habitpulse-profile-changed', profile);
-    } catch {}
+    } catch (e) {
+      console.error('Error saving profile:', e);
+    }
   },
 
   /**
-   * Loads all categories from storage.
+   * Loads all categories from local IndexedDB or legacy localStorage.
    */
   async getCategories(): Promise<Category[]> {
     try {
-      const raw = safeGetItem(STORAGE_KEYS.CATEGORIES);
-      if (!raw) {
-        safeSetItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(DEFAULT_CATEGORIES));
-        return DEFAULT_CATEGORIES;
+      let categories = await idbStorage.getCategories();
+      if (!categories || categories.length === 0) {
+        const raw = safeGetLocalStorage(STORAGE_KEYS.CATEGORIES);
+        if (raw) {
+          categories = JSON.parse(raw);
+        } else {
+          categories = DEFAULT_CATEGORIES;
+        }
+        await idbStorage.saveCategories(categories);
       }
-      return JSON.parse(raw);
+      return categories;
     } catch {
       return DEFAULT_CATEGORIES;
     }
   },
 
   /**
-   * Saves categories list to storage.
+   * Saves categories list locally and enqueues cloud sync.
    */
   async saveCategories(categories: Category[]): Promise<void> {
     try {
-      safeSetItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
+      await idbStorage.saveCategories(categories);
+      for (const cat of categories) {
+        await syncQueue.enqueue('category', cat.id, 'UPDATE', cat);
+      }
+      syncManager.processQueue();
       safeDispatchEvent('habitpulse-categories-changed', categories);
-    } catch {}
+    } catch (e) {
+      console.error('Error saving categories:', e);
+    }
   },
 
   /**
-   * Loads all habits from storage.
+   * Loads all habits from local IndexedDB or legacy localStorage.
    */
   async getHabits(): Promise<Habit[]> {
     try {
-      const raw = safeGetItem(STORAGE_KEYS.HABITS);
-      if (!raw) {
-        const initial = INITIAL_HABITS;
-        safeSetItem(STORAGE_KEYS.HABITS, JSON.stringify(initial));
-        const starterLogs = generateStarterLogs(initial);
-        safeSetItem(STORAGE_KEYS.LOGS, JSON.stringify(starterLogs));
-        safeSetItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(DEFAULT_CATEGORIES));
-        safeSetItem(STORAGE_KEYS.PROFILE, JSON.stringify(DEFAULT_PROFILE));
-        return initial;
+      let habits = await idbStorage.getHabits();
+      if (!habits || habits.length === 0) {
+        const raw = safeGetLocalStorage(STORAGE_KEYS.HABITS);
+        if (raw) {
+          habits = JSON.parse(raw);
+        } else {
+          habits = INITIAL_HABITS;
+          const starterLogs = generateStarterLogs(INITIAL_HABITS);
+          await idbStorage.saveLogs(starterLogs);
+          await idbStorage.saveCategories(DEFAULT_CATEGORIES);
+          await idbStorage.saveProfile(DEFAULT_PROFILE);
+        }
+        await idbStorage.saveHabits(habits);
       }
-      return JSON.parse(raw);
+      return habits;
     } catch {
       return INITIAL_HABITS;
     }
   },
 
   /**
-   * Saves habits list to storage.
+   * Saves habits list locally and enqueues cloud sync.
    */
   async saveHabits(habits: Habit[]): Promise<void> {
     try {
-      safeSetItem(STORAGE_KEYS.HABITS, JSON.stringify(habits));
+      await idbStorage.saveHabits(habits);
+      for (const h of habits) {
+        await syncQueue.enqueue('habit', h.id, 'UPDATE', h);
+      }
+      syncManager.processQueue();
       safeDispatchEvent('habitpulse-habits-changed', habits);
-    } catch {}
+    } catch (e) {
+      console.error('Error saving habits:', e);
+    }
   },
 
   /**
-   * Loads completion logs map from storage.
+   * Loads completion logs map from local IndexedDB or legacy localStorage.
    */
   async getLogs(): Promise<HabitLogs> {
     try {
-      const raw = safeGetItem(STORAGE_KEYS.LOGS);
-      if (!raw) {
-        const initialLogs = generateStarterLogs(INITIAL_HABITS);
-        safeSetItem(STORAGE_KEYS.LOGS, JSON.stringify(initialLogs));
-        return initialLogs;
+      let logs = await idbStorage.getLogs();
+      if (!logs || Object.keys(logs).length === 0) {
+        const raw = safeGetLocalStorage(STORAGE_KEYS.LOGS);
+        if (raw) {
+          logs = JSON.parse(raw);
+          await idbStorage.saveLogs(logs);
+        }
       }
-      return JSON.parse(raw);
+      return logs || {};
     } catch {
       return {};
     }
   },
 
   /**
-   * Saves completion logs map to storage.
+   * Saves completion logs map locally and enqueues cloud sync.
    */
   async saveLogs(logs: HabitLogs): Promise<void> {
     try {
-      safeSetItem(STORAGE_KEYS.LOGS, JSON.stringify(logs));
+      await idbStorage.saveLogs(logs);
+      Object.entries(logs).forEach(([habitId, dateMap]) => {
+        Object.entries(dateMap).forEach(([dateKey, completed]) => {
+          syncQueue.enqueue('completion', `${habitId}_${dateKey}`, 'UPDATE', {
+            habitId,
+            dateKey,
+            completed,
+          });
+        });
+      });
+      syncManager.processQueue();
       safeDispatchEvent('habitpulse-logs-changed', logs);
-    } catch {}
+    } catch (e) {
+      console.error('Error saving logs:', e);
+    }
+  },
+
+  /**
+   * Saves a single completion log entry locally and enqueues cloud sync.
+   */
+  async saveCompletion(habitId: string, dateKey: string, completed: boolean): Promise<void> {
+    try {
+      await idbStorage.saveCompletion(habitId, dateKey, completed);
+      await syncQueue.enqueue('completion', `${habitId}_${dateKey}`, 'UPDATE', {
+        habitId,
+        dateKey,
+        completed,
+      });
+      syncManager.processQueue();
+      const currentLogs = await this.getLogs();
+      safeDispatchEvent('habitpulse-logs-changed', currentLogs);
+    } catch (e) {
+      console.error('Error saving completion:', e);
+    }
   },
 
   /**
@@ -298,25 +341,34 @@ export const storage = {
    */
   async getSettings(): Promise<AppSettings> {
     try {
-      const raw = safeGetItem(STORAGE_KEYS.SETTINGS);
-      if (!raw) {
-        safeSetItem(STORAGE_KEYS.SETTINGS, JSON.stringify(DEFAULT_SETTINGS));
-        return DEFAULT_SETTINGS;
+      let settings = await idbStorage.getSettings();
+      if (!settings) {
+        const raw = safeGetLocalStorage(STORAGE_KEYS.SETTINGS);
+        if (raw) {
+          settings = { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+        } else {
+          settings = DEFAULT_SETTINGS;
+        }
+        await idbStorage.saveSettings(settings);
       }
-      return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+      return settings;
     } catch {
       return DEFAULT_SETTINGS;
     }
   },
 
   /**
-   * Saves user settings.
+   * Saves user settings locally and enqueues cloud sync.
    */
   async saveSettings(settings: AppSettings): Promise<void> {
     try {
-      safeSetItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+      await idbStorage.saveSettings(settings);
+      await syncQueue.enqueue('settings', 'current', 'UPDATE', settings);
+      syncManager.processQueue();
       safeDispatchEvent('habitpulse-settings-changed', settings);
-    } catch {}
+    } catch (e) {
+      console.error('Error saving settings:', e);
+    }
   },
 
   /**
@@ -343,7 +395,7 @@ export const storage = {
   },
 
   /**
-   * Imports JSON backup data.
+   * Imports JSON backup data locally and syncs to cloud if authenticated.
    */
   async importData(jsonString: string): Promise<{ success: boolean; message: string; habitsCount?: number }> {
     try {
@@ -377,19 +429,16 @@ export const storage = {
   },
 
   /**
-   * Clears all habits, categories, and logs from storage (factory reset).
+   * Clears all local data (factory reset).
    */
   async clearAllData(): Promise<void> {
-    safeRemoveItem(STORAGE_KEYS.HABITS);
-    safeRemoveItem(STORAGE_KEYS.LOGS);
-    safeRemoveItem(STORAGE_KEYS.CATEGORIES);
-    safeRemoveItem(STORAGE_KEYS.SETTINGS);
-    safeRemoveItem(STORAGE_KEYS.PROFILE);
+    await idbStorage.clearAllData();
+    await syncQueue.clear();
     safeDispatchEvent('habitpulse-reset');
   },
 
   /**
-   * Seeds demo data.
+   * Seeds demo data locally and syncs if authenticated.
    */
   async seedDemoData(): Promise<void> {
     const habits = INITIAL_HABITS;

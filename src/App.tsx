@@ -12,6 +12,8 @@ import { CategoryManagerModal } from './components/habits/CategoryManagerModal';
 import { DeleteConfirmModal } from './components/habits/DeleteConfirmModal';
 import { CelebrationModal } from './components/today/CelebrationModal';
 import { ProfileModal } from './components/profile/ProfileModal';
+import { AuthModal } from './components/auth/AuthModal';
+import { DataMigrationModal } from './components/auth/DataMigrationModal';
 import { OfflineIndicator } from './components/common/OfflineIndicator';
 import { Sparkles } from 'lucide-react';
 
@@ -20,6 +22,7 @@ export default function App() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [habitToEdit, setHabitToEdit] = useState<Habit | null>(null);
   const [habitToDelete, setHabitToDelete] = useState<Habit | null>(null);
 
@@ -32,11 +35,13 @@ export default function App() {
     isLoading,
     selectedDateKey,
     setSelectedDateKey,
+    allComputedStats,
     computedStats,
     todayProgress,
     toggleHabit,
     addHabit,
     updateHabit,
+    toggleArchiveHabit,
     deleteHabit,
     addCategory,
     updateCategory,
@@ -63,8 +68,8 @@ export default function App() {
   }, [logs]);
 
   const bestOverallStreak = React.useMemo(() => {
-    return computedStats.reduce((max, s) => Math.max(max, s.bestStreak), 0);
-  }, [computedStats]);
+    return allComputedStats.reduce((max, s) => Math.max(max, s.bestStreak), 0);
+  }, [allComputedStats]);
 
   const handleOpenAdd = () => {
     setHabitToEdit(null);
@@ -100,21 +105,24 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col antialiased">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
       {/* Offline Status Toast */}
       <OfflineIndicator />
 
-      {/* Sticky Header */}
+      {/* Sticky Header with Desktop Navigation */}
       <Header
         activeTab={activeTab}
         computedStats={computedStats}
         profile={profile}
         onOpenAddModal={handleOpenAdd}
         onOpenProfileModal={() => setIsProfileModalOpen(true)}
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        onTabChange={setActiveTab}
+        pendingTodayCount={pendingTodayCount}
       />
 
-      {/* Main Content Area - Mobile constrained container */}
-      <main className="flex-1 w-full max-w-lg mx-auto px-4 pt-4 pb-24">
+      {/* Main Content Area - Responsive Container for Mobile, Tablet & Desktop */}
+      <main className="flex-1 w-full max-w-md md:max-w-4xl lg:max-w-6xl mx-auto px-3 sm:px-6 py-4 md:py-6 pb-24 md:pb-12 transition-all">
         {activeTab === 'today' && (
           <TodayScreen
             habits={habits}
@@ -135,9 +143,10 @@ export default function App() {
           <HabitListScreen
             habits={habits}
             categories={categories}
-            computedStats={computedStats}
+            computedStats={allComputedStats}
             onOpenAddModal={handleOpenAdd}
             onEditHabit={handleEditHabit}
+            onToggleArchiveHabit={toggleArchiveHabit}
             onRequestDelete={(h) => setHabitToDelete(h)}
             onOpenCategoryManager={() => setIsCategoryModalOpen(true)}
           />
@@ -148,7 +157,7 @@ export default function App() {
             habits={habits}
             categories={categories}
             logs={logs}
-            computedStats={computedStats}
+            computedStats={allComputedStats}
             profile={profile}
             onOpenProfile={() => setIsProfileModalOpen(true)}
           />
@@ -162,13 +171,14 @@ export default function App() {
             profile={profile}
             onOpenProfile={() => setIsProfileModalOpen(true)}
             onOpenCategoryManager={() => setIsCategoryModalOpen(true)}
+            onOpenAuthModal={() => setIsAuthModalOpen(true)}
             onUpdateSettings={updateSettings}
             onRefreshData={refreshData}
           />
         )}
       </main>
 
-      {/* Bottom Tab Navigation Bar */}
+      {/* Mobile Bottom Tab Navigation Bar */}
       <BottomNav
         activeTab={activeTab}
         onTabChange={setActiveTab}
@@ -208,6 +218,15 @@ export default function App() {
         totalCompletions={totalCompletions}
         maxStreak={bestOverallStreak}
       />
+
+      {/* Cloud Authentication Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+      />
+
+      {/* Data Migration Prompt Modal */}
+      <DataMigrationModal />
 
       {/* Delete Confirmation Modal */}
       <DeleteConfirmModal

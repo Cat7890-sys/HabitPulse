@@ -38,8 +38,8 @@ export const BottomNav: React.FC<Props> = ({
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200/80 dark:border-slate-800/80 bg-white/90 dark:bg-slate-950/90 backdrop-blur-lg pb-[env(safe-area-inset-bottom,0px)]">
-      <div className="mx-auto flex max-w-lg items-center justify-around px-2 py-2">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 md:hidden border-t border-slate-200/80 dark:border-slate-800/80 bg-white/90 dark:bg-slate-950/90 backdrop-blur-lg pb-[env(safe-area-inset-bottom,0px)]">
+      <div className="mx-auto flex max-w-md items-center justify-around px-2 py-2">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
@@ -48,7 +48,8 @@ export const BottomNav: React.FC<Props> = ({
             <button
               key={item.id}
               onClick={() => onTabChange(item.id)}
-              className={`relative flex flex-col items-center justify-center py-1 px-3 rounded-2xl transition-all duration-200 cursor-pointer ${
+              aria-label={item.label}
+              className={`relative flex min-h-[44px] min-w-[44px] flex-col items-center justify-center py-1 px-3 rounded-2xl transition-all duration-200 cursor-pointer ${
                 isActive
                   ? 'text-indigo-600 dark:text-indigo-400 font-semibold'
                   : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'

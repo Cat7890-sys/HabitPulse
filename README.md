@@ -1,70 +1,51 @@
-# HabitPulse - Mobile-First PWA Habit Tracker
+# HabitPulse - Mobile-First Local-First PWA Habit Tracker with Supabase Sync
 
-HabitPulse is a minimalist, privacy-first, offline Progressive Web App (PWA) built with **React**, **TypeScript**, and **Tailwind CSS**. It helps you build consistent daily habits, track unbroken streaks, and gain clarity with 90-day activity heatmaps.
-
----
-
-## ✨ Features
-
-1. **Today Screen**:
-   - One-tap check-off for today's scheduled habits with micro-haptics and audio feedback.
-   - Interactive animated progress ring showing percentage completed.
-   - Live current streak badge next to each habit.
-   - Horizontal date slider and **Full Monthly Date Picker** to navigate and back-fill past days (retroactive logging).
-   - Contextual retroactive entry banner with instant "Return to Today" action.
-   - 100% daily goal completion confetti celebration.
-
-2. **Habit & Category Management**:
-   - Search bar with clear button for finding habits across names and categories.
-   - **Multi-criteria Sorting Dropdown**: Sort by Current Streak (🔥), Best Streak (🏆), Name (A-Z / Z-A), Completion Rate (%), and Creation Date (Newest / Oldest).
-   - Custom color-coded categories (e.g., Health, Work, Personal, Mind, Fitness) with custom emojis and accent colors.
-   - Category Manager to create, edit, customize colors/icons, and delete categories.
-   - Visual category grouping in HabitListScreen with stylized group headers and category filter badges.
-   - Custom emoji icons with curated presets.
-   - Color theming (Indigo, Violet, Rose, Emerald, Amber, Cyan, Blue, Orange).
-   - Flexible frequencies:
-     - **Daily**: Every day.
-     - **Specific Weekdays**: Custom days (e.g. Mon, Wed, Fri).
-     - **X Times / Week**: Flexible target (e.g. 3x per week) with live weekly dot progress indicators.
-   - Optional time-based reminders.
-
-3. **Profile Maker & Gamification**:
-   - **Profile Persona Creator**: Custom avatar emoji presets (24+ curated icons), customizable display name, daily motto/bio, and habit honorific titles (e.g. *Master of Routines*, *Atomic Builder*).
-   - **Level & XP Engine**: Automatically calculates user XP from lifetime check-ins and streaks with level progression bars.
-   - Profile avatar trigger embedded in the header and full profile card in Stats and Settings.
-
-4. **Achievements & Milestones System**:
-   - 15 tiered milestone badges (Bronze, Silver, Gold, Diamond) tracking streaks (e.g., *5-Day Streak*, *One Week Warrior*, *Habit Master*), time routines (*Early Bird*, *Night Owl*), consistency (*Flawless Trio*), and volume (*Centurion*).
-   - Real-time progress bars, filter tabs (*All, Unlocked, Locked*), and interactive achievement detail cards.
-
-5. **Stats & Visualizations**:
-   - **Weekly Goal Progress Widget**: Category-by-category bar chart comparing current weekly check-in totals against user-defined weekly targets with celebration badges.
-   - **90-Day Calendar Heatmap**: GitHub-style activity grid with interactive tooltips and intensity levels.
-   - **7-Day Performance Chart**: Daily completion trends and averages.
-   - **KPI Summary**: Total lifetime check-ins, record streaks, and active habit counts.
-
-6. **Scheduled Push Notifications & Reminders**:
-   - Web Notifications API integration with Service Worker support.
-   - Real-time minute-by-minute alarm checker matching habit reminder times to send prompt push alerts.
-   - Settings reminder dashboard with habit alarm overview and direct per-habit preview test notifications.
-
-6. **Settings & Data Portability**:
-   - **Data Transfer Center**: Mobile-first backup system supporting Web Share API (`navigator.share`), instant `.json` downloads, and direct clipboard copying.
-   - **Flexible Import**: Upload JSON files or paste raw JSON text directly with schema validation, backup contents preview, and a choice between **Replace All** or **Merge** modes.
-   - Web Vibration API integration: Crisp physical haptic patterns for habit completion (`[18ms, 45ms, 28ms]`), unchecking (`10ms`), and daily goal celebrations (`[30ms, 50ms, 40ms, 50ms, 60ms]`).
-   - Dark / Light / System theme switching and 8 accent highlight colors.
-   - Sound effects and tactile vibration toggle.
-   - One-tap demo starter data loading & factory reset safety dialog.
-
-7. **PWA & Offline-First**:
-   - Installable on iOS Safari, Android, and Desktop browsers.
-   - In-app install button and guided iOS Safari instructions.
-   - LocalStorage data layer wrapped in an async storage module ready for backend replacement.
-   - Works 100% offline with service worker caching.
+HabitPulse is a minimalist, privacy-first, offline-first Progressive Web App (PWA) built with **React**, **TypeScript**, **Tailwind CSS**, and **Supabase**. It helps you build consistent daily habits, track unbroken streaks, and gain clarity with 90-day activity heatmaps.
 
 ---
 
-## 🚀 Setup & Run Instructions
+## ✨ Local-First & Supabase Architecture
+
+1. **Local-First Speed**: All user changes (checking habits, adding habits, changing categories, updating profile) save **instantly** to local IndexedDB (`src/storage/db.ts`). The UI never waits for network calls or database servers.
+2. **Offline-First Synchronization**: Operations performed offline are queued in IndexedDB (`sync_queue`). When connectivity returns, `SyncManager` automatically drains the queue up to Supabase.
+3. **Supabase PostgreSQL & Auth**:
+   - Optional Cloud Authentication (Email/Password Sign Up and Sign In).
+   - PostgreSQL database with Row Level Security (RLS) guaranteeing data ownership.
+   - Automatic migration prompt when creating an account on a device with pre-existing local habit records.
+
+---
+
+## 🔒 Supabase Setup Instructions
+
+### 1. Database Schema Execution
+Copy and execute the SQL contained in `supabase/schema.sql` inside your **Supabase Project Dashboard -> SQL Editor**:
+
+1. Log into your Supabase Dashboard at [supabase.com](https://supabase.com).
+2. Open your project (or create a new one).
+3. Navigate to **SQL Editor** -> **New Query**.
+4. Paste the entire content of `supabase/schema.sql`.
+5. Click **Run**.
+
+This creates the following tables with **Row Level Security (RLS)** enabled:
+- `public.profiles`
+- `public.categories`
+- `public.habits`
+- `public.habit_completions`
+- `public.user_settings`
+
+### 2. Environment Variables
+Create a `.env` file in the root directory (or update `.env.example`):
+
+```env
+VITE_SUPABASE_URL=https://your-supabase-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
+```
+
+*Note: You can obtain these keys from your Supabase Dashboard under **Project Settings -> API**.*
+
+---
+
+## 🚀 Setup & Development
 
 ### Prerequisites
 - Node.js 18+ and npm installed.
@@ -75,21 +56,20 @@ HabitPulse is a minimalist, privacy-first, offline Progressive Web App (PWA) bui
 # 1. Install dependencies
 npm install
 
-# 2. Run the development server
+# 2. Run local dev server
 npm run dev
 ```
 
 The app will be available at `http://localhost:3000`.
 
-### Building for Production
+### Building for Production / GitHub Pages
 
 ```bash
-# Build production bundle and service worker assets
+# Build production bundle and service worker
 npm run build
-
-# Preview production build locally
-npm run preview
 ```
+
+Production builds use `base: '/HabitPulse/'` automatically for GitHub Pages deployment (`https://cat7890-sys.github.io/HabitPulse/`).
 
 ---
 
@@ -97,30 +77,26 @@ npm run preview
 
 ```
 ├── public/                 # PWA icons, manifest assets, and favicons
-├── scripts/                # Asset generation scripts
+├── supabase/               # PostgreSQL schema & RLS policies
+│   └── schema.sql
 ├── src/
+│   ├── auth/               # AuthContext & useAuth hook
+│   ├── sync/               # SyncManager & SyncQueue offline-first queue
+│   ├── storage/            # IndexedDB local storage engine & storage wrapper
+│   ├── lib/                # Supabase client initializer
 │   ├── components/
-│   │   ├── common/         # ColorMap, PWAInstallButton, OfflineIndicator
-│   │   ├── habits/         # HabitListScreen, HabitFormModal, DeleteConfirmModal
+│   │   ├── auth/           # AuthModal, DataMigrationModal
+│   │   ├── common/         # SyncStatusBadge, ColorMap, PWAInstallButton
+│   │   ├── habits/         # HabitListScreen, HabitFormModal, CategoryManagerModal
 │   │   ├── layout/         # Header, BottomNav
 │   │   ├── settings/       # SettingsScreen
 │   │   ├── stats/          # StatsScreen, Heatmap90Days, WeeklyChart
-│   │   └── today/          # TodayScreen, ProgressRing, DateSelector, HabitCard, CelebrationModal
+│   │   └── today/          # TodayScreen, ProgressRing, DateSelector, HabitCard
 │   ├── hooks/              # useHabits, usePWAInstall, useOnlineStatus
-│   ├── storage/            # Abstracted storage layer (localStorage wrapper)
 │   ├── types/              # TypeScript interfaces and data models
 │   ├── utils/              # date.ts, streaks.ts, sound.ts, notifications.ts
-│   ├── App.tsx             # Root application orchestrator
-│   ├── index.css           # Tailwind CSS base styles & typography
-│   └── main.tsx            # React application entry point
+│   ├── App.tsx             # Root orchestrator
+│   └── main.tsx            # Application entry point with AuthProvider & ErrorBoundary
 ├── vite.config.ts          # Vite & VitePWA configuration
 └── tsconfig.json           # TypeScript configuration
 ```
-
----
-
-## 💡 Architecture & Storage Notes
-
-All habit records and completion maps are persisted locally in `localStorage` under `habitpulse_habits_v1` and `habitpulse_logs_v1`. 
-
-The `src/storage/storage.ts` module exposes typed async methods (`getHabits()`, `saveHabits()`, `getLogs()`, `saveLogs()`) with event notifications so you can easily replace `localStorage` with a backend API, Firestore, or SQLite database without modifying UI components.

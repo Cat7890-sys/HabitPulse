@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Sparkles, Bell, Calendar, Palette, Tag, Clock, Plus, Settings2 } from 'lucide-react';
+import { X, Sparkles, Bell, Calendar, Palette, Tag, Clock, Plus, Settings2, Archive, ArchiveRestore } from 'lucide-react';
 import { Habit, HabitColor, FrequencyType, Category } from '../../types';
 import { COLOR_OPTIONS, COLOR_SCHEMES } from '../common/ColorMap';
 import { DAYS_SHORT } from '../../utils/date';
@@ -46,6 +46,7 @@ export const HabitFormModal: React.FC<Props> = ({
   const [reminderEnabled, setReminderEnabled] = useState(false);
   const [reminderTime, setReminderTime] = useState('08:00');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
+  const [archived, setArchived] = useState(false);
 
   // Reset or populate state when modal opens
   useEffect(() => {
@@ -58,6 +59,7 @@ export const HabitFormModal: React.FC<Props> = ({
       setTimesPerWeek(habitToEdit.frequency.timesPerWeek || 3);
       setReminderEnabled(!!habitToEdit.reminderEnabled);
       setReminderTime(habitToEdit.reminderTime || '08:00');
+      setArchived(!!habitToEdit.archived);
       
       // Match category by id or name
       const matchedCat = categories.find(
@@ -73,6 +75,7 @@ export const HabitFormModal: React.FC<Props> = ({
       setTimesPerWeek(3);
       setReminderEnabled(false);
       setReminderTime('08:00');
+      setArchived(false);
       setSelectedCategoryId(categories[0]?.id || '');
     }
   }, [habitToEdit, isOpen, categories]);
@@ -126,6 +129,7 @@ export const HabitFormModal: React.FC<Props> = ({
       reminderTime: reminderEnabled ? reminderTime : undefined,
       category: categoryName,
       categoryId: selectedCategoryId || undefined,
+      archived,
     });
     onClose();
   };
@@ -452,6 +456,36 @@ export const HabitFormModal: React.FC<Props> = ({
               </div>
             )}
           </div>
+
+          {/* Archive Status Toggle (when editing an existing habit) */}
+          {habitToEdit && (
+            <div className="rounded-2xl border border-amber-200/80 dark:border-amber-900/40 bg-amber-50/50 dark:bg-amber-950/20 p-3.5 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Archive className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                <div>
+                  <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                    Archive Habit
+                  </h4>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                    Hide from active daily checklist without losing historical streak logs
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setArchived(!archived)}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                  archived ? 'bg-amber-600' : 'bg-slate-300 dark:bg-slate-700'
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                    archived ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+          )}
 
           {/* Submit Buttons */}
           <div className="flex gap-2.5 pt-2">

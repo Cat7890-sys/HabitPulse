@@ -59,8 +59,8 @@ export const StatsScreen: React.FC<Props> = ({
         />
       )}
 
-      {/* KPI Overview Grid */}
-      <div className="grid grid-cols-2 gap-3">
+      {/* KPI Overview Grid - 2 cols on mobile, 4 cols on tablet & desktop */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {/* Total Check-ins */}
         <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800/90 bg-white dark:bg-slate-900 p-4 shadow-xs">
           <div className="flex items-center justify-between">
@@ -134,28 +134,35 @@ export const StatsScreen: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* Achievements and Milestones System */}
-      <AchievementsList
-        habits={habits}
-        logs={logs}
-        computedStats={computedStats}
-        categories={categories}
-      />
+      {/* Responsive Mid Section: 2 Columns on large screens */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
+        <div className="space-y-5">
+          {/* Achievements and Milestones System */}
+          <AchievementsList
+            habits={habits}
+            logs={logs}
+            computedStats={computedStats}
+            categories={categories}
+          />
 
-      {/* Weekly Goal Progress Widget by Category */}
-      <WeeklyGoalProgress
-        habits={habits}
-        categories={categories}
-        logs={logs}
-      />
+          {/* Weekly Goal Progress Widget by Category */}
+          <WeeklyGoalProgress
+            habits={habits}
+            categories={categories}
+            logs={logs}
+          />
+        </div>
 
-      {/* 7-Day Performance Bar Chart */}
-      <WeeklyChart habits={habits} logs={logs} />
+        <div className="space-y-5">
+          {/* 7-Day Performance Bar Chart */}
+          <WeeklyChart habits={habits} logs={logs} />
 
-      {/* 90-Day Calendar Heatmap */}
-      <Heatmap90Days habits={habits} logs={logs} />
+          {/* 90-Day Calendar Heatmap */}
+          <Heatmap90Days habits={habits} logs={logs} />
+        </div>
+      </div>
 
-      {/* Per-Habit Breakdown Section */}
+      {/* Per-Habit Breakdown Section in 2 columns on tablet/desktop */}
       <div className="rounded-3xl border border-slate-200/90 dark:border-slate-800/90 bg-white dark:bg-slate-900 p-5 shadow-sm space-y-4">
         <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
           <div>
@@ -168,7 +175,7 @@ export const StatsScreen: React.FC<Props> = ({
           </div>
         </div>
 
-        <div className="space-y-3.5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
           {computedStats.map((stat) => {
             const { habit, currentStreak, bestStreak, totalCompletions, completionRate } = stat;
             const colorScheme = COLOR_SCHEMES[habit.color] || COLOR_SCHEMES.indigo;

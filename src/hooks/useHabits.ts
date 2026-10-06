@@ -78,10 +78,11 @@ export function useHabits() {
   useEffect(() => {
     if (!settings.notificationsEnabled) return;
 
-    // Check on mount and every 15s for exact minute accuracy
-    checkHabitReminders(habits, logs);
+    // Check active habits only
+    const activeHabits = habits.filter((h) => !h.archived);
+    checkHabitReminders(activeHabits, logs);
     const interval = setInterval(() => {
-      checkHabitReminders(habits, logs);
+      checkHabitReminders(activeHabits, logs);
     }, 15000);
 
     return () => clearInterval(interval);
@@ -102,11 +103,20 @@ export function useHabits() {
     }
   }, [settings.theme]);
 
-  // Computed stats for each habit
-  const computedStats: HabitComputedStats[] = useMemo(() => {
-    const activeHabits = habits.filter((h) => !h.archived);
-    return activeHabits.map((habit) => computeHabitStats(habit, logs, selectedDateKey));
+  // Computed stats for ALL habits
+  const allComputedStats: HabitComputedStats[] = useMemo(() => {
+    return habits.map((habit) => computeHabitStats(habit, logs, selectedDateKey));
   }, [habits, logs, selectedDateKey]);
+
+  // Computed stats for ACTIVE habits only
+  const computedStats: HabitComputedStats[] = useMemo(() => {
+    return allComputedStats.filter((s) => !s.habit.archived);
+  }, [allComputedStats]);
+
+  // Computed stats for ARCHIVED habits only
+  const archivedComputedStats: HabitComputedStats[] = useMemo(() => {
+    return allComputedStats.filter((s) => s.habit.archived);
+  }, [allComputedStats]);
 
   // Today scheduled habits and progress calculation
   const todayHabits = useMemo(() => {
@@ -187,6 +197,7 @@ export function useHabits() {
         ...newHabitData,
         id: `habit-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
         createdAt: new Date().toISOString(),
+        archived: false,
         order: habits.length,
       };
 
@@ -210,7 +221,30 @@ export function useHabits() {
     [habits]
   );
 
-  // Delete habit
+  // Toggle archive status
+  const toggleArchiveHabit = useCallback(
+    async (habitId: string) => {
+      const target = habits.find((h) => h.id === habitId);
+      if (!target) return;
+      const nextArchived = !target.archived;
+      const updated = habits.map((h) =>
+        h.id === habitId ? { ...h, archived: nextArchived } : h
+      );
+      setHabits(updated);
+      await storage.saveHabits(updated);
+
+      if (nextArchived) {
+        sound.playUncheck(settings.soundEnabled);
+        triggerHaptic('uncheck', settings.hapticsEnabled);
+      } else {
+        sound.playCheck(settings.soundEnabled);
+        triggerHaptic('complete', settings.hapticsEnabled);
+      }
+    },
+    [habits, settings]
+  );
+
+  // Delete habit permanently
   const deleteHabit = useCallback(
     async (habitId: string) => {
       const updated = habits.filter((h) => h.id !== habitId);
@@ -306,12 +340,15 @@ export function useHabits() {
     isLoading,
     selectedDateKey,
     setSelectedDateKey,
+    allComputedStats,
     computedStats,
+    archivedComputedStats,
     todayHabits,
     todayProgress,
     toggleHabit,
     addHabit,
     updateHabit,
+    toggleArchiveHabit,
     deleteHabit,
     addCategory,
     updateCategory,

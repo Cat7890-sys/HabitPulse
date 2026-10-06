@@ -15,6 +15,8 @@ import {
   ArrowUpDown,
   X,
   Sparkles,
+  Archive,
+  ArchiveRestore,
 } from 'lucide-react';
 import { Habit, HabitComputedStats, Category } from '../../types';
 import { COLOR_SCHEMES } from '../common/ColorMap';
@@ -35,6 +37,7 @@ interface Props {
   computedStats: HabitComputedStats[];
   onOpenAddModal: () => void;
   onEditHabit: (habit: Habit) => void;
+  onToggleArchiveHabit?: (habitId: string) => void;
   onRequestDelete: (habit: Habit) => void;
   onOpenCategoryManager: () => void;
 }
@@ -45,13 +48,19 @@ export const HabitListScreen: React.FC<Props> = ({
   computedStats,
   onOpenAddModal,
   onEditHabit,
+  onToggleArchiveHabit,
   onRequestDelete,
   onOpenCategoryManager,
 }) => {
+  const [activeTabFilter, setActiveTabFilter] = useState<'active' | 'archived'>('active');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('all');
   const [isGroupedByCategory, setIsGroupedByCategory] = useState(false);
   const [sortBy, setSortBy] = useState<HabitSortOption>('streak-desc');
+
+  // Counts
+  const activeCount = useMemo(() => habits.filter((h) => !h.archived).length, [habits]);
+  const archivedCount = useMemo(() => habits.filter((h) => h.archived).length, [habits]);
 
   // Helper map: categoryId or name -> Category object
   const categoryMap = useMemo(() => {
@@ -76,8 +85,14 @@ export const HabitListScreen: React.FC<Props> = ({
 
   // Filtered & Sorted stats
   const processedStats = useMemo(() => {
-    // 1. Filter
-    const filtered = computedStats.filter((stat) => {
+    // 0. Filter active vs archived
+    const tabFiltered = computedStats.filter((stat) => {
+      if (activeTabFilter === 'archived') return !!stat.habit.archived;
+      return !stat.habit.archived;
+    });
+
+    // 1. Search & Category Filter
+    const filtered = tabFiltered.filter((stat) => {
       const cat = getHabitCategory(stat.habit);
       const catName = cat?.name || stat.habit.category || 'General';
 
@@ -112,12 +127,12 @@ export const HabitListScreen: React.FC<Props> = ({
         case 'created-desc':
           return new Date(b.habit.createdAt || 0).getTime() - new Date(a.habit.createdAt || 0).getTime();
         case 'created-asc':
-          return new Date(a.habit.createdAt || 0).getTime() - new Date(b.habit.createdAt || 0).getTime();
+          return new Date(a.habit.createdAt || 0).getTime() - new Date(a.habit.createdAt || 0).getTime();
         default:
           return 0;
       }
     });
-  }, [computedStats, searchQuery, selectedCategoryId, sortBy, categoryMap]);
+  }, [computedStats, activeTabFilter, searchQuery, selectedCategoryId, sortBy, categoryMap]);
 
   // Grouped stats by category
   const groupedStats = useMemo(() => {
@@ -167,11 +182,16 @@ export const HabitListScreen: React.FC<Props> = ({
     const habitColor = COLOR_SCHEMES[habit.color] || COLOR_SCHEMES.indigo;
     const category = getHabitCategory(habit);
     const categoryColor = category ? COLOR_SCHEMES[category.color] || habitColor : habitColor;
+    const isArchived = !!habit.archived;
 
     return (
       <div
         key={habit.id}
-        className="rounded-2xl border border-slate-200/90 dark:border-slate-800/90 bg-white dark:bg-slate-900 p-4 shadow-sm hover:shadow-md transition"
+        className={`rounded-2xl border p-4 shadow-xs hover:shadow-md transition ${
+          isArchived
+            ? 'bg-slate-100/70 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 opacity-80 hover:opacity-100'
+            : 'bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800/90'
+        }`}
       >
         {/* Top Row: Icon, Title, Actions */}
         <div className="flex items-start justify-between gap-3">
@@ -182,11 +202,20 @@ export const HabitListScreen: React.FC<Props> = ({
               {habit.emoji}
             </div>
             <div>
-              <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                {habit.name}
-              </h4>
-              <div className="flex items-center gap-2 mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-                {/* Category Tag Badge with Category's Custom Color */}
+              <div className="flex items-center gap-2">
+                <h4 className="text-sm font-bold text-slate-900 dark:text-white leading-snug">
+                  {habit.name}
+                </h4>
+                {isArchived && (
+                  <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 dark:bg-amber-950/80 px-2 py-0.5 text-[10px] font-extrabold text-amber-700 dark:text-amber-400">
+                    <Archive className="h-2.5 w-2.5" />
+                    <span>Archived</span>
+                  </span>
+                )}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-1.5 mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                {/* Category Tag Badge */}
                 {category ? (
                   <span
                     className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold border ${categoryColor.bgSubtle}`}
@@ -210,9 +239,30 @@ export const HabitListScreen: React.FC<Props> = ({
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5">
+            {/* Archive / Unarchive Button */}
+            {onToggleArchiveHabit && (
+              <button
+                onClick={() => onToggleArchiveHabit(habit.id)}
+                aria-label={isArchived ? "Restore Habit" : "Archive Habit"}
+                className={`p-1.5 rounded-xl transition cursor-pointer ${
+                  isArchived
+                    ? 'text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-950/50'
+                    : 'text-slate-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40'
+                }`}
+                title={isArchived ? 'Restore to Active Habits' : 'Archive Habit'}
+              >
+                {isArchived ? (
+                  <ArchiveRestore className="h-4 w-4" />
+                ) : (
+                  <Archive className="h-4 w-4" />
+                )}
+              </button>
+            )}
+
             <button
               onClick={() => onEditHabit(habit)}
+              aria-label="Edit Habit"
               className="p-1.5 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
               title="Edit Habit"
             >
@@ -220,8 +270,9 @@ export const HabitListScreen: React.FC<Props> = ({
             </button>
             <button
               onClick={() => onRequestDelete(habit)}
+              aria-label="Delete Habit"
               className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer"
-              title="Delete Habit"
+              title="Delete Habit Permanently"
             >
               <Trash2 className="h-4 w-4" />
             </button>
@@ -263,7 +314,7 @@ export const HabitListScreen: React.FC<Props> = ({
         </div>
 
         {/* Reminder status */}
-        {habit.reminderEnabled && habit.reminderTime && (
+        {!isArchived && habit.reminderEnabled && habit.reminderTime && (
           <div className="mt-2.5 flex items-center gap-1.5 text-[10px] font-semibold text-indigo-600 dark:text-indigo-400">
             <Bell className="h-3 w-3" />
             <span>Reminder set for {habit.reminderTime} every scheduled day</span>
@@ -275,6 +326,38 @@ export const HabitListScreen: React.FC<Props> = ({
 
   return (
     <div className="space-y-4 pb-12">
+      {/* Active vs Archived Segmented Control */}
+      <div className="grid grid-cols-2 gap-1 rounded-2xl bg-slate-100 dark:bg-slate-800/70 p-1 max-w-md">
+        <button
+          onClick={() => setActiveTabFilter('active')}
+          className={`flex items-center justify-center gap-2 py-2 text-xs font-extrabold rounded-xl transition cursor-pointer ${
+            activeTabFilter === 'active'
+              ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs'
+              : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+          }`}
+        >
+          <span>Active Habits</span>
+          <span className="rounded-full bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.2 text-[10px] text-indigo-600 dark:text-indigo-400">
+            {activeCount}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setActiveTabFilter('archived')}
+          className={`flex items-center justify-center gap-2 py-2 text-xs font-extrabold rounded-xl transition cursor-pointer ${
+            activeTabFilter === 'archived'
+              ? 'bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 shadow-xs'
+              : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+          }`}
+        >
+          <Archive className="h-3.5 w-3.5" />
+          <span>Archived</span>
+          <span className="rounded-full bg-amber-50 dark:bg-amber-950/60 px-2 py-0.2 text-[10px] text-amber-600 dark:text-amber-400">
+            {archivedCount}
+          </span>
+        </button>
+      </div>
+
       {/* Search Bar & Action Toolbar */}
       <div className="space-y-2.5">
         {/* Search Input with Clear Button */}
@@ -282,7 +365,7 @@ export const HabitListScreen: React.FC<Props> = ({
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <input
             type="text"
-            placeholder="Search habits or categories..."
+            placeholder={activeTabFilter === 'archived' ? "Search archived habits..." : "Search habits or categories..."}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full h-11 pl-10 pr-10 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-xs"
@@ -290,6 +373,7 @@ export const HabitListScreen: React.FC<Props> = ({
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
+              aria-label="Clear Search"
               className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full"
             >
               <X className="h-4 w-4" />
@@ -306,6 +390,7 @@ export const HabitListScreen: React.FC<Props> = ({
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as HabitSortOption)}
+                aria-label="Sort habits by"
                 className="w-full h-10 pl-8 pr-7 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-2xs appearance-none"
               >
                 <option value="streak-desc">🔥 Current Streak (High to Low)</option>
@@ -360,16 +445,17 @@ export const HabitListScreen: React.FC<Props> = ({
           >
             <span>All</span>
             <span className="rounded-full bg-slate-200 dark:bg-slate-800 px-1.5 py-0.2 text-[10px] font-extrabold text-slate-700 dark:text-slate-300">
-              {habits.length}
+              {activeTabFilter === 'archived' ? archivedCount : activeCount}
             </span>
           </button>
 
-          {/* Individual Category Filter Pills with Color Accents */}
+          {/* Individual Category Filter Pills */}
           {categories.map((cat) => {
             const isSelected = selectedCategoryId === cat.id;
             const scheme = COLOR_SCHEMES[cat.color] || COLOR_SCHEMES.indigo;
             const count = habits.filter(
-              (h) => h.categoryId === cat.id || h.category === cat.name
+              (h) => (activeTabFilter === 'archived' ? !!h.archived : !h.archived) &&
+                     (h.categoryId === cat.id || h.category === cat.name)
             ).length;
 
             return (
@@ -402,38 +488,48 @@ export const HabitListScreen: React.FC<Props> = ({
       {/* Habit Count Summary Bar */}
       <div className="flex items-center justify-between px-1">
         <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
-          {processedStats.length} {processedStats.length === 1 ? 'Habit' : 'Habits'}
+          {processedStats.length} {activeTabFilter === 'archived' ? 'Archived Habit' : 'Active Habit'}{processedStats.length === 1 ? '' : 's'}
         </span>
-        <button
-          onClick={onOpenAddModal}
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 transition cursor-pointer"
-        >
-          <Plus className="h-4 w-4" />
-          <span>New Habit</span>
-        </button>
+        {activeTabFilter === 'active' && (
+          <button
+            onClick={onOpenAddModal}
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 transition cursor-pointer"
+          >
+            <Plus className="h-4 w-4" />
+            <span>New Habit</span>
+          </button>
+        )}
       </div>
 
-      {/* Habits List */}
+      {/* Habits Grid (Responsive 1 column on mobile, 2 columns on tablet & desktop) */}
       {processedStats.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-slate-300 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 p-8 text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 text-2xl">
-            ✨
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 text-2xl">
+            {activeTabFilter === 'archived' ? '📦' : '✨'}
           </div>
           <h4 className="mt-3 text-sm font-bold text-slate-800 dark:text-slate-200">
-            {searchQuery ? 'No matching habits found' : 'No habits in this category'}
+            {activeTabFilter === 'archived'
+              ? 'No archived habits'
+              : searchQuery
+              ? 'No matching habits found'
+              : 'No habits in this category'}
           </h4>
           <p className="mt-1 text-xs text-slate-400 max-w-xs mx-auto">
-            {searchQuery
+            {activeTabFilter === 'archived'
+              ? 'When you archive habits you want to pause, they will appear here with all historical logs intact.'
+              : searchQuery
               ? 'Try changing your search keywords or select another category.'
               : 'Create a habit assigned to this category to see it here.'}
           </p>
-          <button
-            onClick={onOpenAddModal}
-            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-indigo-600/30 hover:bg-indigo-700 transition cursor-pointer"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Create Habit</span>
-          </button>
+          {activeTabFilter === 'active' && (
+            <button
+              onClick={onOpenAddModal}
+              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-indigo-600/30 hover:bg-indigo-700 transition cursor-pointer"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Create Habit</span>
+            </button>
+          )}
         </div>
       ) : isGroupedByCategory && groupedStats ? (
         /* Visual Category Groups View */
@@ -462,8 +558,8 @@ export const HabitListScreen: React.FC<Props> = ({
                   </span>
                 </div>
 
-                {/* Habit Cards in this Category */}
-                <div className="space-y-3">
+                {/* Habit Cards in 1 or 2 columns */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                   {stats.map((stat) => renderHabitCard(stat))}
                 </div>
               </div>
@@ -471,8 +567,8 @@ export const HabitListScreen: React.FC<Props> = ({
           })}
         </div>
       ) : (
-        /* Flat List View */
-        <div className="space-y-3">
+        /* Responsive Grid View */
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
           {processedStats.map((stat) => renderHabitCard(stat))}
         </div>
       )}
