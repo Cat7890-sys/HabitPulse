@@ -5,11 +5,48 @@
     --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
     -webkit-tap-highlight-color: transparent;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+
+    /* Unified Responsive Spacing System */
+    --space-container-px: clamp(0.75rem, 2.5vw, 2rem);
+    --space-container-py: clamp(1rem, 3vw, 2.5rem);
+    --space-card-p: clamp(0.875rem, 2.2vw, 1.75rem);
+    --space-card-gap: clamp(0.75rem, 2vw, 1.5rem);
+    --space-section-gap: clamp(1.25rem, 3.5vw, 2.5rem);
   }
 
   body {
     font-family: var(--font-sans);
     padding-bottom: env(safe-area-inset-bottom, 16px);
+  }
+}
+
+/* Responsive Spacing Utilities */
+@layer utilities {
+  .app-container-spacing {
+    padding-left: var(--space-container-px);
+    padding-right: var(--space-container-px);
+    padding-top: var(--space-container-py);
+    padding-bottom: var(--space-container-py);
+  }
+
+  .card-spacing {
+    padding: var(--space-card-p);
+  }
+
+  .card-gap {
+    gap: var(--space-card-gap);
+  }
+
+  .section-gap {
+    gap: var(--space-section-gap);
+  }
+
+  .responsive-padding {
+    padding: clamp(0.875rem, 2.5vw, 1.75rem);
+  }
+
+  .responsive-margin {
+    margin: clamp(0.875rem, 2.5vw, 1.75rem);
   }
 }
 
