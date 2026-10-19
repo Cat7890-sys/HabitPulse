@@ -1,7 +1,23 @@
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import {
+  collection,
+  doc,
+  setDoc,
+  deleteDoc,
+  getDocs,
+  getDoc,
+} from 'firebase/firestore';
+import { db, auth, isFirebaseConfigured, handleFirestoreError, OperationType } from '../lib/firebase';
 import { syncQueue } from './syncQueue';
 import { idbStorage, SyncQueueItem } from '../storage/db';
-import { Habit, HabitLogs, Category, AppSettings, UserProfile } from '../types';
+import {
+  Habit,
+  HabitLogs,
+  Category,
+  AppSettings,
+  UserProfile,
+  TokenTransaction,
+  HabitMilestoneClaim,
+} from '../types';
 
 export type SyncStatus = 'synced' | 'syncing' | 'offline' | 'pending' | 'error';
 
@@ -44,11 +60,11 @@ class SyncManager {
   }
 
   /**
-   * Process all pending queued mutations and upload to Supabase.
+   * Process all pending queued mutations and upload to Firebase Firestore.
    */
   public async processQueue(): Promise<void> {
     if (this.isProcessing) return;
-    if (!isSupabaseConfigured() || !supabase) return;
+    if (!isFirebaseConfigured()) return;
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
       this.setStatus('offline');
       return;
@@ -60,10 +76,8 @@ class SyncManager {
       return;
     }
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
       this.setStatus('pending');
       return;
     }
@@ -73,7 +87,7 @@ class SyncManager {
 
     try {
       for (const item of pending) {
-        const success = await this.syncItem(user.id, item);
+        const success = await this.syncItem(currentUser.uid, item);
         if (success && item.id) {
           await syncQueue.removeItem(item.id);
         }
@@ -94,83 +108,102 @@ class SyncManager {
   }
 
   private async syncItem(userId: string, item: SyncQueueItem): Promise<boolean> {
-    if (!supabase) return false;
-
     try {
       if (item.entity === 'habit') {
+        const habitDocRef = doc(db, 'users', userId, 'habits', item.entityId);
         if (item.operation === 'DELETE') {
-          await supabase.from('habits').delete().eq('id', item.entityId).eq('user_id', userId);
+          await deleteDoc(habitDocRef).catch((e) =>
+            handleFirestoreError(e, OperationType.DELETE, `users/${userId}/habits/${item.entityId}`)
+          );
         } else {
           const habit: Habit = item.payload;
-          await supabase.from('habits').upsert({
+          const payload = {
             id: habit.id,
-            user_id: userId,
             name: habit.name,
-            emoji: habit.emoji,
-            color: habit.color,
+            emoji: habit.emoji || '🎯',
+            color: habit.color || 'indigo',
             frequency: habit.frequency,
-            reminder_time: habit.reminderTime || null,
-            reminder_enabled: !!habit.reminderEnabled,
+            reminderTime: habit.reminderTime || null,
+            reminderEnabled: !!habit.reminderEnabled,
             category: habit.category || null,
-            category_id: habit.categoryId || null,
-            created_at: habit.createdAt || new Date().toISOString(),
+            categoryId: habit.categoryId || null,
+            createdAt: habit.createdAt || new Date().toISOString(),
             archived: !!habit.archived,
-            order_index: habit.order || 0,
-            updated_at: new Date().toISOString(),
-          });
+            order: habit.order || 0,
+            description: habit.description || '',
+            goalType: habit.goalType || 'recurring',
+            startDate: habit.startDate || null,
+            targetDate: habit.targetDate || null,
+            targetTime: habit.targetTime || null,
+            targetCompletions: habit.targetCompletions || 0,
+            isGoalCompleted: !!habit.isGoalCompleted,
+            goalCompletedAt: habit.goalCompletedAt || null,
+            userId,
+            updatedAt: new Date().toISOString(),
+          };
+          await setDoc(habitDocRef, payload, { merge: true }).catch((e) =>
+            handleFirestoreError(e, OperationType.WRITE, `users/${userId}/habits/${item.entityId}`)
+          );
         }
       } else if (item.entity === 'completion') {
+        const logDocRef = doc(db, 'users', userId, 'logs', item.entityId);
         if (item.operation === 'DELETE') {
-          await supabase.from('habit_completions').delete().eq('id', item.entityId).eq('user_id', userId);
+          await deleteDoc(logDocRef).catch((e) =>
+            handleFirestoreError(e, OperationType.DELETE, `users/${userId}/logs/${item.entityId}`)
+          );
         } else {
           const { habitId, dateKey, completed } = item.payload;
-          await supabase.from('habit_completions').upsert({
-            id: `${habitId}_${dateKey}`,
-            user_id: userId,
-            habit_id: habitId,
-            date_key: dateKey,
-            completed,
-            updated_at: new Date().toISOString(),
-          });
-        }
-      } else if (item.entity === 'category') {
-        if (item.operation === 'DELETE') {
-          await supabase.from('categories').delete().eq('id', item.entityId).eq('user_id', userId);
-        } else {
-          const cat: Category = item.payload;
-          await supabase.from('categories').upsert({
-            id: cat.id,
-            user_id: userId,
-            name: cat.name,
-            color: cat.color,
-            emoji: cat.emoji,
-            updated_at: new Date().toISOString(),
-          });
+          await setDoc(
+            logDocRef,
+            {
+              id: item.entityId,
+              habitId,
+              date: dateKey,
+              completed: !!completed,
+              userId,
+              updatedAt: new Date().toISOString(),
+            },
+            { merge: true }
+          ).catch((e) =>
+            handleFirestoreError(e, OperationType.WRITE, `users/${userId}/logs/${item.entityId}`)
+          );
         }
       } else if (item.entity === 'profile') {
         const profile: UserProfile = item.payload;
-        await supabase.from('profiles').upsert({
-          id: userId,
-          name: profile.name,
-          avatar: profile.avatar,
-          bio: profile.bio,
-          title: profile.title,
-          joined_at: profile.joinedAt,
-          daily_habit_goal: profile.dailyHabitGoal,
-          theme_color: profile.themeColor,
-          updated_at: new Date().toISOString(),
-        });
+        const profileDocRef = doc(db, 'users', userId);
+        await setDoc(
+          profileDocRef,
+          {
+            name: profile.name,
+            avatar: profile.avatar || '🦁',
+            bio: profile.bio || '',
+            title: profile.title || 'Consistent Striver',
+            joinedAt: profile.joinedAt || new Date().toISOString(),
+            dailyHabitGoal: profile.dailyHabitGoal || 4,
+            themeColor: profile.themeColor || 'indigo',
+            userId,
+            updatedAt: new Date().toISOString(),
+          },
+          { merge: true }
+        ).catch((e) => handleFirestoreError(e, OperationType.WRITE, `users/${userId}`));
       } else if (item.entity === 'settings') {
         const settings: AppSettings = item.payload;
-        await supabase.from('user_settings').upsert({
-          user_id: userId,
-          theme: settings.theme,
-          accent_color: settings.accentColor,
-          sound_enabled: settings.soundEnabled,
-          haptics_enabled: settings.hapticsEnabled,
-          notifications_enabled: settings.notificationsEnabled,
-          updated_at: new Date().toISOString(),
-        });
+        const settingsDocRef = doc(db, 'users', userId, 'settings', 'config');
+        await setDoc(
+          settingsDocRef,
+          {
+            theme: settings.theme,
+            accentColor: settings.accentColor,
+            soundEnabled: !!settings.soundEnabled,
+            hapticsEnabled: !!settings.hapticsEnabled,
+            notificationsEnabled: !!settings.notificationsEnabled,
+            userId,
+            updatedAt: new Date().toISOString(),
+          },
+          { merge: true }
+        ).catch((e) =>
+          handleFirestoreError(e, OperationType.WRITE, `users/${userId}/settings/config`)
+        );
       }
 
       return true;
@@ -181,98 +214,138 @@ class SyncManager {
   }
 
   /**
-   * Pull all cloud data for the logged-in user and write into IndexedDB.
+   * Pull all cloud data from Firestore for the logged-in user and write into IndexedDB.
    */
   public async pullFromCloud(userId: string): Promise<void> {
-    if (!isSupabaseConfigured() || !supabase) return;
+    if (!isFirebaseConfigured()) return;
 
     this.setStatus('syncing');
 
     try {
       // 1. Fetch habits
-      const { data: dbHabits } = await supabase.from('habits').select('*').eq('user_id', userId);
-      if (dbHabits && dbHabits.length > 0) {
-        const habits: Habit[] = dbHabits.map((h) => ({
-          id: h.id,
-          name: h.name,
-          emoji: h.emoji,
-          color: h.color,
-          frequency: h.frequency,
-          reminderTime: h.reminder_time || undefined,
-          reminderEnabled: h.reminder_enabled,
-          category: h.category || undefined,
-          categoryId: h.category_id || undefined,
-          createdAt: h.created_at,
-          archived: h.archived,
-          order: h.order_index,
-        }));
+      const habitsCol = collection(db, 'users', userId, 'habits');
+      const habitSnap = await getDocs(habitsCol).catch((e) =>
+        handleFirestoreError(e, OperationType.GET, `users/${userId}/habits`)
+      );
+
+      if (habitSnap && !habitSnap.empty) {
+        const habits: Habit[] = habitSnap.docs.map((d) => {
+          const data = d.data();
+          return {
+            id: data.id || d.id,
+            name: data.name,
+            emoji: data.emoji || '🎯',
+            color: data.color || 'indigo',
+            frequency: data.frequency || { type: 'daily' },
+            reminderTime: data.reminderTime || undefined,
+            reminderEnabled: data.reminderEnabled,
+            category: data.category || undefined,
+            categoryId: data.categoryId || undefined,
+            createdAt: data.createdAt || new Date().toISOString(),
+            archived: data.archived,
+            order: data.order ?? 0,
+            description: data.description || undefined,
+            goalType: data.goalType || 'recurring',
+            startDate: data.startDate || undefined,
+            targetDate: data.targetDate || undefined,
+            targetTime: data.targetTime || undefined,
+            targetCompletions: data.targetCompletions || undefined,
+            isGoalCompleted: data.isGoalCompleted,
+            goalCompletedAt: data.goalCompletedAt || undefined,
+          };
+        });
         await idbStorage.saveHabits(habits);
       }
 
       // 2. Fetch completions / logs
-      const { data: dbLogs } = await supabase.from('habit_completions').select('*').eq('user_id', userId);
-      if (dbLogs && dbLogs.length > 0) {
+      const logsCol = collection(db, 'users', userId, 'logs');
+      const logsSnap = await getDocs(logsCol).catch((e) =>
+        handleFirestoreError(e, OperationType.GET, `users/${userId}/logs`)
+      );
+
+      if (logsSnap && !logsSnap.empty) {
         const logs: HabitLogs = {};
-        dbLogs.forEach((l) => {
-          if (!logs[l.habit_id]) logs[l.habit_id] = {};
-          logs[l.habit_id][l.date_key] = l.completed;
+        logsSnap.docs.forEach((d) => {
+          const data = d.data();
+          const habitId = data.habitId;
+          const dateKey = data.date;
+          if (habitId && dateKey) {
+            if (!logs[habitId]) logs[habitId] = {};
+            logs[habitId][dateKey] = Boolean(data.completed);
+          }
         });
         await idbStorage.saveLogs(logs);
       }
 
-      // 3. Fetch categories
-      const { data: dbCategories } = await supabase.from('categories').select('*').eq('user_id', userId);
-      if (dbCategories && dbCategories.length > 0) {
-        const categories: Category[] = dbCategories.map((c) => ({
-          id: c.id,
-          name: c.name,
-          color: c.color,
-          emoji: c.emoji,
-        }));
-        await idbStorage.saveCategories(categories);
-      }
+      // 3. Fetch profile
+      const profileDocRef = doc(db, 'users', userId);
+      const profileSnap = await getDoc(profileDocRef).catch((e) =>
+        handleFirestoreError(e, OperationType.GET, `users/${userId}`)
+      );
 
-      // 4. Fetch profile
-      const { data: dbProfile } = await supabase.from('profiles').select('*').eq('id', userId).single();
-      if (dbProfile) {
+      if (profileSnap && profileSnap.exists()) {
+        const data = profileSnap.data();
         const profile: UserProfile = {
-          name: dbProfile.name,
-          avatar: dbProfile.avatar,
-          bio: dbProfile.bio,
-          title: dbProfile.title,
-          joinedAt: dbProfile.joined_at,
-          dailyHabitGoal: dbProfile.daily_habit_goal,
-          themeColor: dbProfile.theme_color,
+          name: data.name || 'Habit Champion',
+          avatar: data.avatar || '🦁',
+          bio: data.bio || '',
+          title: data.title || 'Consistent Striver',
+          joinedAt: data.joinedAt || new Date().toISOString(),
+          dailyHabitGoal: data.dailyHabitGoal || 4,
+          themeColor: data.themeColor || 'indigo',
         };
         await idbStorage.saveProfile(profile);
       }
 
-      // 5. Fetch settings
-      const { data: dbSettings } = await supabase.from('user_settings').select('*').eq('user_id', userId).single();
-      if (dbSettings) {
+      // 4. Fetch settings
+      const settingsDocRef = doc(db, 'users', userId, 'settings', 'config');
+      const settingsSnap = await getDoc(settingsDocRef).catch((e) =>
+        handleFirestoreError(e, OperationType.GET, `users/${userId}/settings/config`)
+      );
+
+      if (settingsSnap && settingsSnap.exists()) {
+        const data = settingsSnap.data();
         const settings: AppSettings = {
-          theme: dbSettings.theme,
-          accentColor: dbSettings.accent_color,
-          soundEnabled: dbSettings.sound_enabled,
-          hapticsEnabled: dbSettings.haptics_enabled,
-          notificationsEnabled: dbSettings.notifications_enabled,
+          theme: data.theme || 'dark',
+          accentColor: data.accentColor || 'indigo',
+          soundEnabled: data.soundEnabled ?? true,
+          hapticsEnabled: data.hapticsEnabled ?? true,
+          notificationsEnabled: data.notificationsEnabled ?? false,
         };
         await idbStorage.saveSettings(settings);
+      }
+
+      // 5. Fetch transactions
+      const txCol = collection(db, 'users', userId, 'transactions');
+      const txSnap = await getDocs(txCol).catch(() => null);
+      if (txSnap && !txSnap.empty) {
+        const txList: TokenTransaction[] = txSnap.docs.map((d) => d.data() as TokenTransaction);
+        await idbStorage.saveTransactions(txList);
+      }
+
+      // 6. Fetch claims
+      const claimsCol = collection(db, 'users', userId, 'claims');
+      const claimsSnap = await getDocs(claimsCol).catch(() => null);
+      if (claimsSnap && !claimsSnap.empty) {
+        const claimsList: HabitMilestoneClaim[] = claimsSnap.docs.map(
+          (d) => d.data() as HabitMilestoneClaim
+        );
+        await idbStorage.saveMilestoneClaims(claimsList);
       }
 
       this.setStatus('synced');
       this.dispatchLocalDataEvents();
     } catch (err) {
-      console.error('Error pulling from cloud:', err);
+      console.error('Error pulling from Firebase Firestore:', err);
       this.setStatus('error');
     }
   }
 
   /**
-   * Push all current local data from IndexedDB up to Supabase.
+   * Push all current local data from IndexedDB up to Firestore.
    */
   public async pushLocalToCloud(userId: string): Promise<void> {
-    if (!isSupabaseConfigured() || !supabase) return;
+    if (!isFirebaseConfigured()) return;
 
     this.setStatus('syncing');
 
@@ -282,6 +355,8 @@ class SyncManager {
       const categories = await idbStorage.getCategories();
       const profile = await idbStorage.getProfile();
       const settings = await idbStorage.getSettings();
+      const transactions = await idbStorage.getTransactions();
+      const claims = await idbStorage.getMilestoneClaims();
 
       // Enqueue habits
       for (const h of habits) {
@@ -299,11 +374,6 @@ class SyncManager {
         });
       });
 
-      // Enqueue categories
-      for (const c of categories) {
-        await syncQueue.enqueue('category', c.id, 'UPDATE', c);
-      }
-
       // Enqueue profile
       if (profile) {
         await syncQueue.enqueue('profile', userId, 'UPDATE', profile);
@@ -314,9 +384,20 @@ class SyncManager {
         await syncQueue.enqueue('settings', userId, 'UPDATE', settings);
       }
 
+      // Direct write transactions and claims to Firestore
+      for (const tx of transactions) {
+        const txDocRef = doc(db, 'users', userId, 'transactions', tx.id);
+        await setDoc(txDocRef, { ...tx, userId }, { merge: true }).catch(() => null);
+      }
+
+      for (const claim of claims) {
+        const claimDocRef = doc(db, 'users', userId, 'claims', claim.id);
+        await setDoc(claimDocRef, { ...claim, userId }, { merge: true }).catch(() => null);
+      }
+
       await this.processQueue();
     } catch (err) {
-      console.error('Error pushing local data to cloud:', err);
+      console.error('Error pushing local data to Firebase Firestore:', err);
       this.setStatus('error');
     }
   }
@@ -328,6 +409,7 @@ class SyncManager {
       window.dispatchEvent(new CustomEvent('habitpulse-categories-changed'));
       window.dispatchEvent(new CustomEvent('habitpulse-profile-changed'));
       window.dispatchEvent(new CustomEvent('habitpulse-settings-changed'));
+      window.dispatchEvent(new CustomEvent('habitpulse-transactions-changed'));
     }
   }
 }

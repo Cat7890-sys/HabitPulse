@@ -1,0 +1,128 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net - Default Deny Catch-All
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Connection validation probe document
+    match /test/connection {
+      allow read: if true;
+    }
+
+    // Common Security Helper Functions
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Validation Helpers
+    function isValidUserProfile(data, userId) {
+      return data.userId == userId
+        && data.name is string
+        && data.name.size() > 0
+        && data.name.size() <= 100;
+    }
+
+    function isValidHabit(data, userId) {
+      return data.userId == userId
+        && isValidId(data.id)
+        && data.name is string
+        && data.name.size() > 0
+        && data.name.size() <= 150;
+    }
+
+    function isValidHabitLog(data, userId) {
+      return data.userId == userId
+        && isValidId(data.habitId)
+        && data.date is string
+        && data.date.size() <= 20
+        && data.completed is bool;
+    }
+
+    function isValidTokenTransaction(data, userId) {
+      return data.userId == userId
+        && isValidId(data.id)
+        && data.type is string
+        && data.type.size() <= 50
+        && data.amount is number;
+    }
+
+    function isValidMilestoneClaim(data, userId) {
+      return data.userId == userId
+        && isValidId(data.id)
+        && isValidId(data.habitId)
+        && isValidId(data.milestoneId)
+        && data.cycle is int;
+    }
+
+    function isValidAppSettings(data, userId) {
+      return data.userId == userId;
+    }
+
+    // User Root Document
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUserProfile(incoming(), userId);
+      allow update: if isOwner(userId) && isValidUserProfile(incoming(), userId) && incoming().userId == existing().userId;
+      allow delete: if isOwner(userId);
+
+      // Habits subcollection
+      match /habits/{habitId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(habitId) && isValidHabit(incoming(), userId);
+        allow update: if isOwner(userId) && isValidId(habitId) && isValidHabit(incoming(), userId) && incoming().userId == existing().userId;
+        allow delete: if isOwner(userId) && isValidId(habitId);
+      }
+
+      // Habit completion logs subcollection
+      match /logs/{logId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(logId) && isValidHabitLog(incoming(), userId);
+        allow update: if isOwner(userId) && isValidId(logId) && isValidHabitLog(incoming(), userId) && incoming().userId == existing().userId;
+        allow delete: if isOwner(userId) && isValidId(logId);
+      }
+
+      // Token transactions ledger
+      match /transactions/{transactionId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(transactionId) && isValidTokenTransaction(incoming(), userId);
+        allow update: if isOwner(userId) && isValidId(transactionId) && isValidTokenTransaction(incoming(), userId) && incoming().userId == existing().userId;
+        allow delete: if isOwner(userId) && isValidId(transactionId);
+      }
+
+      // Milestone claims
+      match /claims/{claimId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(claimId) && isValidMilestoneClaim(incoming(), userId);
+        allow update: if isOwner(userId) && isValidId(claimId) && isValidMilestoneClaim(incoming(), userId) && incoming().userId == existing().userId;
+        allow delete: if isOwner(userId) && isValidId(claimId);
+      }
+
+      // Settings
+      match /settings/{settingId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(settingId) && isValidAppSettings(incoming(), userId);
+        allow update: if isOwner(userId) && isValidId(settingId) && isValidAppSettings(incoming(), userId) && incoming().userId == existing().userId;
+        allow delete: if isOwner(userId) && isValidId(settingId);
+      }
+    }
+  }
+}

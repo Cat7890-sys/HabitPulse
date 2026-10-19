@@ -1,16 +1,23 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import {
+  User,
+  onAuthStateChanged,
+  signInWithPopup,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut as fbSignOut,
+} from 'firebase/auth';
+import { auth, googleAuthProvider, isFirebaseConfigured } from '../lib/firebase';
 import { syncManager, SyncStatus } from '../sync/syncManager';
 import { idbStorage } from '../storage/db';
 
 interface AuthContextType {
   user: User | null;
-  session: Session | null;
   isLoading: boolean;
   isConfigured: boolean;
   syncStatus: SyncStatus;
   showMigrationPrompt: boolean;
+  signInWithGoogle: () => Promise<{ success: boolean; error?: string }>;
   signUp: (email: string, pass: string) => Promise<{ success: boolean; error?: string }>;
   signIn: (email: string, pass: string) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
@@ -24,11 +31,10 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>(syncManager.getStatus());
   const [showMigrationPrompt, setShowMigrationPrompt] = useState(false);
-  const isConfigured = isSupabaseConfigured();
+  const isConfigured = isFirebaseConfigured();
 
   // Listen to sync manager status changes
   useEffect(() => {
@@ -38,116 +44,98 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return unsubscribe;
   }, []);
 
-  // Initialize auth session
+  // Listen to Firebase auth state changes
   useEffect(() => {
-    if (!isConfigured || !supabase) {
+    if (!isConfigured) {
       setIsLoading(false);
       return;
     }
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setIsLoading(false);
-      if (session?.user) {
-        syncManager.processQueue();
-      }
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser);
       setIsLoading(false);
 
-      if (event === 'SIGNED_IN' && session?.user) {
+      if (currentUser) {
         // Check if there is pre-existing local data to prompt migration
         const habits = await idbStorage.getHabits();
         if (habits && habits.length > 0) {
           setShowMigrationPrompt(true);
         } else {
-          await syncManager.pullFromCloud(session.user.id);
+          await syncManager.pullFromCloud(currentUser.uid);
         }
-      } else if (event === 'SIGNED_OUT') {
+        syncManager.processQueue();
+      } else {
         setShowMigrationPrompt(false);
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => unsubscribe();
   }, [isConfigured]);
 
+  const signInWithGoogle = async () => {
+    if (!isConfigured) {
+      return { success: false, error: 'Firebase is not configured.' };
+    }
+    try {
+      const result = await signInWithPopup(auth, googleAuthProvider);
+      setUser(result.user);
+      return { success: true };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Google sign-in failed.';
+      return { success: false, error: msg };
+    }
+  };
+
   const signUp = async (email: string, pass: string) => {
-    if (!isConfigured || !supabase) {
-      return { success: false, error: 'Supabase is not configured yet. Check your .env file.' };
+    if (!isConfigured) {
+      return { success: false, error: 'Firebase is not configured.' };
     }
 
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password: pass,
-      });
-
-      if (error) {
-        return { success: false, error: error.message };
-      }
-
-      if (data.user) {
-        setUser(data.user);
-        setSession(data.session);
-      }
-
+      const cred = await createUserWithEmailAndPassword(auth, email, pass);
+      setUser(cred.user);
       return { success: true };
-    } catch (err: any) {
-      return { success: false, error: err?.message || 'An unexpected authentication error occurred.' };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Could not create account.';
+      return { success: false, error: msg };
     }
   };
 
   const signIn = async (email: string, pass: string) => {
-    if (!isConfigured || !supabase) {
-      return { success: false, error: 'Supabase is not configured yet. Check your .env file.' };
+    if (!isConfigured) {
+      return { success: false, error: 'Firebase is not configured.' };
     }
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password: pass,
-      });
-
-      if (error) {
-        return { success: false, error: error.message };
-      }
-
-      if (data.user) {
-        setUser(data.user);
-        setSession(data.session);
-      }
-
+      const cred = await signInWithEmailAndPassword(auth, email, pass);
+      setUser(cred.user);
       return { success: true };
-    } catch (err: any) {
-      return { success: false, error: err?.message || 'Invalid email or password.' };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Invalid email or password.';
+      return { success: false, error: msg };
     }
   };
 
   const signOut = async () => {
-    if (supabase) {
-      await supabase.auth.signOut();
+    try {
+      await fbSignOut(auth);
+    } catch (e) {
+      console.error('Sign out error:', e);
     }
     setUser(null);
-    setSession(null);
     setShowMigrationPrompt(false);
   };
 
   const migrateLocalDataToCloud = async () => {
     if (user) {
-      await syncManager.pushLocalToCloud(user.id);
+      await syncManager.pushLocalToCloud(user.uid);
     }
     setShowMigrationPrompt(false);
   };
 
   const startFreshCloud = async () => {
     if (user) {
-      await syncManager.pullFromCloud(user.id);
+      await syncManager.pullFromCloud(user.uid);
     }
     setShowMigrationPrompt(false);
   };
@@ -159,7 +147,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const triggerManualSync = async () => {
     if (user) {
       await syncManager.processQueue();
-      await syncManager.pullFromCloud(user.id);
+      await syncManager.pullFromCloud(user.uid);
     }
   };
 
@@ -167,11 +155,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     <AuthContext.Provider
       value={{
         user,
-        session,
         isLoading,
         isConfigured,
         syncStatus,
         showMigrationPrompt,
+        signInWithGoogle,
         signUp,
         signIn,
         signOut,

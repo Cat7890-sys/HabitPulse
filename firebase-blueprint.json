@@ -1,0 +1,361 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile and personal preferences",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Display name of the user",
+          "maxLength": 100
+        },
+        "avatar": {
+          "type": "string",
+          "description": "Avatar emoji or identifier",
+          "maxLength": 30
+        },
+        "bio": {
+          "type": "string",
+          "description": "Short user bio",
+          "maxLength": 300
+        },
+        "title": {
+          "type": "string",
+          "description": "User rank title",
+          "maxLength": 100
+        },
+        "joinedAt": {
+          "type": "string",
+          "description": "ISO timestamp when account was created"
+        },
+        "dailyHabitGoal": {
+          "type": "number",
+          "description": "Target number of completed habits per day"
+        },
+        "themeColor": {
+          "type": "string",
+          "description": "Theme accent color key",
+          "maxLength": 30
+        },
+        "userId": {
+          "type": "string",
+          "description": "UID of the owner",
+          "maxLength": 128
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of last update"
+        }
+      },
+      "required": ["name", "userId"]
+    },
+    "Habit": {
+      "title": "Habit",
+      "description": "A habit item tracked by the user",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique habit ID",
+          "maxLength": 128
+        },
+        "name": {
+          "type": "string",
+          "description": "Habit title",
+          "maxLength": 150
+        },
+        "emoji": {
+          "type": "string",
+          "description": "Habit icon emoji",
+          "maxLength": 30
+        },
+        "color": {
+          "type": "string",
+          "description": "Accent color name",
+          "maxLength": 30
+        },
+        "frequency": {
+          "type": "object",
+          "description": "Frequency scheduling configuration"
+        },
+        "reminderTime": {
+          "type": "string",
+          "description": "Optional reminder time string HH:MM",
+          "maxLength": 10
+        },
+        "reminderEnabled": {
+          "type": "boolean",
+          "description": "Whether reminders are turned on"
+        },
+        "category": {
+          "type": "string",
+          "description": "Legacy category string",
+          "maxLength": 60
+        },
+        "categoryId": {
+          "type": "string",
+          "description": "Category ID reference",
+          "maxLength": 128
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp of creation"
+        },
+        "archived": {
+          "type": "boolean",
+          "description": "Whether the habit is archived"
+        },
+        "order": {
+          "type": "number",
+          "description": "Sort order position"
+        },
+        "description": {
+          "type": "string",
+          "description": "Optional habit description or target details",
+          "maxLength": 500
+        },
+        "goalType": {
+          "type": "string",
+          "description": "recurring or one_time",
+          "maxLength": 30
+        },
+        "startDate": {
+          "type": "string",
+          "description": "Start date YYYY-MM-DD",
+          "maxLength": 20
+        },
+        "targetDate": {
+          "type": "string",
+          "description": "Target date YYYY-MM-DD",
+          "maxLength": 20
+        },
+        "targetTime": {
+          "type": "string",
+          "description": "Target time HH:MM",
+          "maxLength": 10
+        },
+        "targetCompletions": {
+          "type": "number",
+          "description": "Target count of completions"
+        },
+        "isGoalCompleted": {
+          "type": "boolean",
+          "description": "Whether goal deadline was completed"
+        },
+        "goalCompletedAt": {
+          "type": "string",
+          "description": "ISO timestamp when goal completed",
+          "maxLength": 40
+        },
+        "userId": {
+          "type": "string",
+          "description": "UID of owner",
+          "maxLength": 128
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of update"
+        }
+      },
+      "required": ["id", "name", "userId"]
+    },
+    "HabitLog": {
+      "title": "HabitLog",
+      "description": "Habit completion log entry",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Log composite key habitId_date",
+          "maxLength": 128
+        },
+        "habitId": {
+          "type": "string",
+          "description": "Referenced habit ID",
+          "maxLength": 128
+        },
+        "date": {
+          "type": "string",
+          "description": "Calendar date string YYYY-MM-DD",
+          "maxLength": 20
+        },
+        "completed": {
+          "type": "boolean",
+          "description": "Whether habit was marked complete"
+        },
+        "userId": {
+          "type": "string",
+          "description": "UID of owner",
+          "maxLength": 128
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of log change"
+        }
+      },
+      "required": ["habitId", "date", "completed", "userId"]
+    },
+    "TokenTransaction": {
+      "title": "TokenTransaction",
+      "description": "Ledger entry for token earnings or spending",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Transaction identifier",
+          "maxLength": 128
+        },
+        "type": {
+          "type": "string",
+          "description": "Transaction type category",
+          "maxLength": 50
+        },
+        "amount": {
+          "type": "number",
+          "description": "Token delta amount"
+        },
+        "habitId": {
+          "type": "string",
+          "description": "Associated habit ID",
+          "maxLength": 128
+        },
+        "habitName": {
+          "type": "string",
+          "description": "Associated habit title",
+          "maxLength": 150
+        },
+        "milestoneId": {
+          "type": "string",
+          "description": "Associated milestone ID",
+          "maxLength": 128
+        },
+        "milestoneName": {
+          "type": "string",
+          "description": "Milestone title",
+          "maxLength": 100
+        },
+        "description": {
+          "type": "string",
+          "description": "Transaction narrative note",
+          "maxLength": 300
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp"
+        },
+        "userId": {
+          "type": "string",
+          "description": "UID of owner",
+          "maxLength": 128
+        }
+      },
+      "required": ["id", "type", "amount", "userId"]
+    },
+    "MilestoneClaim": {
+      "title": "MilestoneClaim",
+      "description": "Record of a milestone awarded to avoid double claim per cycle",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Deterministic claim ID",
+          "maxLength": 128
+        },
+        "habitId": {
+          "type": "string",
+          "description": "Associated habit ID",
+          "maxLength": 128
+        },
+        "milestoneId": {
+          "type": "string",
+          "description": "Associated milestone ID",
+          "maxLength": 128
+        },
+        "cycle": {
+          "type": "number",
+          "description": "Cycle number"
+        },
+        "claimedStreak": {
+          "type": "number",
+          "description": "Streak at time of claim"
+        },
+        "claimedAt": {
+          "type": "string",
+          "description": "ISO timestamp of claim"
+        },
+        "userId": {
+          "type": "string",
+          "description": "UID of owner",
+          "maxLength": 128
+        }
+      },
+      "required": ["id", "habitId", "milestoneId", "cycle", "userId"]
+    },
+    "AppSettings": {
+      "title": "AppSettings",
+      "description": "User application settings",
+      "type": "object",
+      "properties": {
+        "theme": {
+          "type": "string",
+          "description": "Theme selection",
+          "maxLength": 20
+        },
+        "accentColor": {
+          "type": "string",
+          "description": "Accent color name",
+          "maxLength": 30
+        },
+        "soundEnabled": {
+          "type": "boolean",
+          "description": "Sound effects active"
+        },
+        "hapticsEnabled": {
+          "type": "boolean",
+          "description": "Haptic feedback active"
+        },
+        "notificationsEnabled": {
+          "type": "boolean",
+          "description": "Push notification preference"
+        },
+        "userId": {
+          "type": "string",
+          "description": "UID of owner",
+          "maxLength": 128
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of last update"
+        }
+      },
+      "required": ["userId"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile document containing preferences and stats"
+    },
+    "/users/{userId}/habits/{habitId}": {
+      "schema": "Habit",
+      "description": "User created habits with goals and schedules"
+    },
+    "/users/{userId}/logs/{logId}": {
+      "schema": "HabitLog",
+      "description": "Habit completion records indexed by date"
+    },
+    "/users/{userId}/transactions/{transactionId}": {
+      "schema": "TokenTransaction",
+      "description": "Ledger of earned tokens and milestone rewards"
+    },
+    "/users/{userId}/claims/{claimId}": {
+      "schema": "MilestoneClaim",
+      "description": "Milestone claims to ensure single reward per cycle"
+    },
+    "/users/{userId}/settings/{settingId}": {
+      "schema": "AppSettings",
+      "description": "User settings document"
+    }
+  }
+}
