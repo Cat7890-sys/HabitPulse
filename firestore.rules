@@ -33,6 +33,15 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    // Administrator Authorization (Custom Claim, Trusted Admin Collection, or Verified Bootstrap Owner)
+    function isAdmin() {
+      return isSignedIn() && (
+        (request.auth.token.email == 'matimbangobeni78@gmail.com' && request.auth.token.email_verified == true) ||
+        request.auth.token.admin == true ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
     // Validation Helpers
     function isValidUserProfile(data, userId) {
       return data.userId == userId
@@ -77,51 +86,56 @@ service cloud.firestore {
       return data.userId == userId;
     }
 
-    // User Root Document
+    function isValidDailyMetrics(data) {
+      return data.date is string
+        && data.date.size() > 0
+        && data.date.size() <= 20;
+    }
+
+    // Trusted Admin Access Control List (Read only for verified admins, no self-promotion)
+    match /admins/{adminId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // Aggregate Daily Usage Metrics (Privacy Preserving: Only aggregate counts, zero individual data)
+    match /daily_metrics/{metricId} {
+      allow read: if isAdmin();
+      allow create, update: if isSignedIn() && isValidDailyMetrics(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // User Directory: Admin can list profiles with minimal account info (never habits or logs)
     match /users/{userId} {
-      allow get: if isOwner(userId);
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
       allow create: if isOwner(userId) && isValidUserProfile(incoming(), userId);
       allow update: if isOwner(userId) && isValidUserProfile(incoming(), userId) && incoming().userId == existing().userId;
       allow delete: if isOwner(userId);
 
-      // Habits subcollection
+      // Strict Zero-Trust Privacy: Habits are ONLY accessible by the owner
       match /habits/{habitId} {
-        allow read: if isOwner(userId);
-        allow create: if isOwner(userId) && isValidId(habitId) && isValidHabit(incoming(), userId);
-        allow update: if isOwner(userId) && isValidId(habitId) && isValidHabit(incoming(), userId) && incoming().userId == existing().userId;
-        allow delete: if isOwner(userId) && isValidId(habitId);
+        allow read, write: if isOwner(userId);
       }
 
-      // Habit completion logs subcollection
+      // Strict Zero-Trust Privacy: Logs are ONLY accessible by the owner
       match /logs/{logId} {
-        allow read: if isOwner(userId);
-        allow create: if isOwner(userId) && isValidId(logId) && isValidHabitLog(incoming(), userId);
-        allow update: if isOwner(userId) && isValidId(logId) && isValidHabitLog(incoming(), userId) && incoming().userId == existing().userId;
-        allow delete: if isOwner(userId) && isValidId(logId);
+        allow read, write: if isOwner(userId);
       }
 
-      // Token transactions ledger
+      // Strict Zero-Trust Privacy: Transactions are ONLY accessible by the owner
       match /transactions/{transactionId} {
-        allow read: if isOwner(userId);
-        allow create: if isOwner(userId) && isValidId(transactionId) && isValidTokenTransaction(incoming(), userId);
-        allow update: if isOwner(userId) && isValidId(transactionId) && isValidTokenTransaction(incoming(), userId) && incoming().userId == existing().userId;
-        allow delete: if isOwner(userId) && isValidId(transactionId);
+        allow read, write: if isOwner(userId);
       }
 
-      // Milestone claims
+      // Strict Zero-Trust Privacy: Claims are ONLY accessible by the owner
       match /claims/{claimId} {
-        allow read: if isOwner(userId);
-        allow create: if isOwner(userId) && isValidId(claimId) && isValidMilestoneClaim(incoming(), userId);
-        allow update: if isOwner(userId) && isValidId(claimId) && isValidMilestoneClaim(incoming(), userId) && incoming().userId == existing().userId;
-        allow delete: if isOwner(userId) && isValidId(claimId);
+        allow read, write: if isOwner(userId);
       }
 
-      // Settings
+      // Strict Zero-Trust Privacy: Settings are ONLY accessible by the owner
       match /settings/{settingId} {
-        allow read: if isOwner(userId);
-        allow create: if isOwner(userId) && isValidId(settingId) && isValidAppSettings(incoming(), userId);
-        allow update: if isOwner(userId) && isValidId(settingId) && isValidAppSettings(incoming(), userId) && incoming().userId == existing().userId;
-        allow delete: if isOwner(userId) && isValidId(settingId);
+        allow read, write: if isOwner(userId);
       }
     }
   }

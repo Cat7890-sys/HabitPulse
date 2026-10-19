@@ -17,6 +17,7 @@ import { DataMigrationModal } from './components/auth/DataMigrationModal';
 import { OfflineIndicator } from './components/common/OfflineIndicator';
 import { TokenWalletModal } from './components/wallet/TokenWalletModal';
 import { MilestoneCelebrationModal } from './components/wallet/MilestoneCelebrationModal';
+import { AdminDashboard } from './components/admin/AdminDashboard';
 import { Sparkles } from 'lucide-react';
 
 export default function App() {
@@ -206,6 +207,10 @@ export default function App() {
             onUpdateSettings={updateSettings}
             onRefreshData={refreshData}
           />
+        )}
+
+        {activeTab === 'admin' && (
+          <AdminDashboard onBackToApp={() => setActiveTab('today')} />
         )}
       </main>
 

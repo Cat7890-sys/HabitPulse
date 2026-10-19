@@ -43,6 +43,16 @@
           "description": "UID of the owner",
           "maxLength": 128
         },
+        "email": {
+          "type": "string",
+          "description": "Optional user email",
+          "maxLength": 120
+        },
+        "accountStatus": {
+          "type": "string",
+          "description": "Account status (e.g. active, restricted)",
+          "maxLength": 30
+        },
         "updatedAt": {
           "type": "string",
           "description": "ISO timestamp of last update"
@@ -330,6 +340,74 @@
         }
       },
       "required": ["userId"]
+    },
+    "DailyMetrics": {
+      "title": "DailyMetrics",
+      "description": "Aggregated daily platform metrics without PII or private habit records",
+      "type": "object",
+      "properties": {
+        "date": {
+          "type": "string",
+          "description": "Calendar date key YYYY-MM-DD",
+          "maxLength": 20
+        },
+        "active_user_count": {
+          "type": "number",
+          "description": "Unique daily active users"
+        },
+        "registration_count": {
+          "type": "number",
+          "description": "Total registered profiles"
+        },
+        "new_registrations_count": {
+          "type": "number",
+          "description": "New accounts registered on this date"
+        },
+        "habits_created_count": {
+          "type": "number",
+          "description": "Aggregate count of habits created"
+        },
+        "habits_completed_count": {
+          "type": "number",
+          "description": "Aggregate count of habits marked completed"
+        },
+        "app_open_count": {
+          "type": "number",
+          "description": "Total app open session events"
+        },
+        "updated_at": {
+          "type": "string",
+          "description": "ISO timestamp of last metric update"
+        }
+      },
+      "required": ["date"]
+    },
+    "AdminRecord": {
+      "title": "AdminRecord",
+      "description": "Trusted administrative authorization record",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth user ID",
+          "maxLength": 128
+        },
+        "email": {
+          "type": "string",
+          "description": "Administrator email address",
+          "maxLength": 120
+        },
+        "assignedAt": {
+          "type": "string",
+          "description": "ISO timestamp of role assignment"
+        },
+        "role": {
+          "type": "string",
+          "description": "Admin privilege level",
+          "maxLength": 30
+        }
+      },
+      "required": ["uid"]
     }
   },
   "firestore": {
@@ -356,6 +434,14 @@
     "/users/{userId}/settings/{settingId}": {
       "schema": "AppSettings",
       "description": "User settings document"
+    },
+    "/daily_metrics/{metricId}": {
+      "schema": "DailyMetrics",
+      "description": "Aggregate daily metrics for privacy-preserving administrative usage analytics"
+    },
+    "/admins/{adminId}": {
+      "schema": "AdminRecord",
+      "description": "Trusted administrator access control list"
     }
   }
 }

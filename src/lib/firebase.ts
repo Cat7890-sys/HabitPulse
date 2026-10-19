@@ -1,10 +1,32 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut as fbSignOut } from 'firebase/auth';
-import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
+import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import {
+  initializeFirestore,
+  getFirestore,
+  doc,
+  getDocFromServer,
+  setLogLevel,
+} from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 // Initialize Firebase App
 export const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+
+// In browser / iframe environments, force long polling to avoid WebSocket drops
+try {
+  if (typeof window !== 'undefined') {
+    initializeFirestore(
+      app,
+      {
+        experimentalForceLongPolling: true,
+      },
+      firebaseConfig.firestoreDatabaseId
+    );
+    setLogLevel('error');
+  }
+} catch {
+  // If already initialized, getFirestore below will reuse the existing instance
+}
 
 /* CRITICAL: The app will break without this line */
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
@@ -16,19 +38,17 @@ export const isFirebaseConfigured = () => {
 };
 
 // Validate Connection to Firestore as per instructions
-export async function testFirestoreConnection(): Promise<boolean> {
+export async function testConnection() {
   try {
     await getDocFromServer(doc(db, 'test', 'connection'));
-    return true;
   } catch (error) {
     if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.warn('Firestore: the client is currently offline.');
-      return false;
+      console.error('Please check your Firebase configuration.');
     }
-    // Any other response confirms connectivity to Firestore service
-    return true;
   }
 }
+
+export const testFirestoreConnection = testConnection;
 
 // Error handling standard per Skill
 export enum OperationType {

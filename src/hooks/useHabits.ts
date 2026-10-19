@@ -23,6 +23,7 @@ import { computeHabitStats, isHabitScheduledOnDate } from '../utils/streaks';
 import { sound, triggerHaptic } from '../utils/sound';
 import { checkHabitReminders } from '../utils/notifications';
 import { useMilestones } from './useMilestones';
+import { trackEvent } from '../utils/analytics';
 
 export function useHabits() {
   const [habits, setHabits] = useState<Habit[]>(INITIAL_HABITS);
@@ -203,6 +204,7 @@ export function useHabits() {
       if (nextVal) {
         sound.playCheck(settings.soundEnabled);
         triggerHaptic('complete', settings.hapticsEnabled);
+        trackEvent('habit_completed');
 
         // If this habit is a one-time task, complete its goal
         if (targetHabit && targetHabit.goalType === 'one_time' && !targetHabit.isGoalCompleted) {
@@ -291,6 +293,7 @@ export function useHabits() {
       const updated = [...habits, newHabit];
       setHabits(updated);
       await storage.saveHabits(updated);
+      trackEvent('habit_created');
       return newHabit;
     },
     [habits]

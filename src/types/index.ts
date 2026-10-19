@@ -98,7 +98,36 @@ export interface HabitComputedStats {
   };
 }
 
-export type ActiveTab = 'today' | 'habits' | 'stats' | 'settings';
+export type ActiveTab = 'today' | 'habits' | 'stats' | 'settings' | 'admin';
+
+export interface DailyMetrics {
+  date: string; // 'YYYY-MM-DD'
+  active_user_count: number;
+  registration_count?: number;
+  new_registrations_count?: number;
+  habits_created_count?: number;
+  habits_completed_count?: number;
+  app_open_count?: number;
+  updated_at?: string;
+}
+
+export interface AdminUserProfile {
+  userId: string;
+  name: string;
+  email?: string;
+  avatar?: string;
+  title?: string;
+  joinedAt: string;
+  accountStatus?: string;
+  dailyHabitGoal?: number;
+}
+
+export type AnalyticsEventType =
+  | 'app_open'
+  | 'sign_up'
+  | 'sign_in'
+  | 'habit_created'
+  | 'habit_completed';
 
 export interface UserProfile {
   name: string;

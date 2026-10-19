@@ -44,7 +44,7 @@ export const Header: React.FC<Props> = ({
   onTabChange,
   pendingTodayCount = 0,
 }) => {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
 
   // Compute max active streak among all habits
   const topStreak = computedStats.reduce(
@@ -61,6 +61,7 @@ export const Header: React.FC<Props> = ({
     { id: 'habits' as ActiveTab, label: 'Habits', icon: LayoutList },
     { id: 'stats' as ActiveTab, label: 'Stats', icon: BarChart3 },
     { id: 'settings' as ActiveTab, label: 'Settings', icon: Settings },
+    ...(isAdmin ? [{ id: 'admin' as ActiveTab, label: 'Admin', icon: ShieldCheck }] : []),
   ];
 
   return (
@@ -165,6 +166,23 @@ export const Header: React.FC<Props> = ({
               }`}
             >
               <ShieldCheck className="h-4 w-4" />
+            </button>
+          )}
+
+          {/* Admin Dashboard Button (Only visible to verified administrators) */}
+          {isAdmin && onTabChange && (
+            <button
+              onClick={() => onTabChange('admin')}
+              title="Open Admin Dashboard"
+              aria-label="Admin Dashboard"
+              className={`flex h-9 items-center gap-1.5 px-2.5 rounded-xl border transition hover:scale-105 active:scale-95 cursor-pointer ${
+                activeTab === 'admin'
+                  ? 'bg-indigo-600 border-indigo-500 text-white shadow-md shadow-indigo-600/30'
+                  : 'bg-indigo-50 dark:bg-indigo-950/60 border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400'
+              }`}
+            >
+              <ShieldCheck className="h-4 w-4" />
+              <span className="hidden sm:inline text-xs font-bold">Admin</span>
             </button>
           )}
 

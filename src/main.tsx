@@ -3,12 +3,10 @@ import App from './App';
 import './index.css';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { AuthProvider } from './auth/AuthContext';
-import { testFirestoreConnection } from './lib/firebase';
+import { testConnection } from './lib/firebase';
 
-// Validate connection to Firestore on initial boot
-testFirestoreConnection().catch((err) => {
-  console.warn('Initial Firestore connection check warning:', err);
-});
+// Validate connection to Firestore on initial boot as per skill instructions
+testConnection();
 
 const rootElement = document.getElementById('root');
 if (rootElement) {
