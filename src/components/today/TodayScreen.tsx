@@ -1,9 +1,18 @@
 import React from 'react';
 import { Plus, CheckCheck, Sparkles, Calendar, History, ArrowRight } from 'lucide-react';
-import { Habit, HabitLogs, HabitComputedStats, Category } from '../../types';
+import {
+  Habit,
+  HabitLogs,
+  HabitComputedStats,
+  Category,
+  LoginStreakData,
+  TokenTransaction,
+  MilestoneConfig,
+} from '../../types';
 import { ProgressRing } from './ProgressRing';
 import { DateSelector } from './DateSelector';
 import { HabitCard } from './HabitCard';
+import { TokenWalletCard } from '../wallet/TokenWalletCard';
 import { getTodayKey, formatDisplayDate } from '../../utils/date';
 
 interface Props {
@@ -14,10 +23,17 @@ interface Props {
   selectedDateKey: string;
   onSelectDate: (dateKey: string) => void;
   todayProgress: { completed: number; total: number; percentage: number };
+  tokenBalance: number;
+  totalTokensEarned: number;
+  loginStreak: LoginStreakData;
+  transactions: TokenTransaction[];
+  milestones: MilestoneConfig[];
   onToggleHabit: (habitId: string, dateKey: string) => void;
   onOpenAddModal: () => void;
   onEditHabit: (habit: Habit) => void;
   onRequestDelete: (habit: Habit) => void;
+  onCompleteGoal?: (habitId: string) => void;
+  onOpenWallet: () => void;
 }
 
 export const TodayScreen: React.FC<Props> = ({
@@ -28,10 +44,17 @@ export const TodayScreen: React.FC<Props> = ({
   selectedDateKey,
   onSelectDate,
   todayProgress,
+  tokenBalance,
+  totalTokensEarned,
+  loginStreak,
+  transactions,
+  milestones,
   onToggleHabit,
   onOpenAddModal,
   onEditHabit,
   onRequestDelete,
+  onCompleteGoal,
+  onOpenWallet,
 }) => {
   const today = getTodayKey();
   const isToday = selectedDateKey === today;
@@ -48,7 +71,17 @@ export const TodayScreen: React.FC<Props> = ({
   });
 
   return (
-    <div className="pb-12">
+    <div className="space-y-4 pb-12">
+      {/* Token Wallet & Milestones Overview Card */}
+      <TokenWalletCard
+        tokenBalance={tokenBalance}
+        totalTokensEarned={totalTokensEarned}
+        loginStreak={loginStreak}
+        transactions={transactions}
+        milestones={milestones}
+        onOpenWallet={onOpenWallet}
+      />
+
       {/* Desktop Layout: 2 Columns on lg screens; Mobile Layout: Stacked single column */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-start">
         {/* Left Column (lg:col-span-5): Date Navigator & Daily Goal Summary */}
@@ -144,6 +177,7 @@ export const TodayScreen: React.FC<Props> = ({
                     onToggle={onToggleHabit}
                     onEdit={onEditHabit}
                     onDelete={() => onRequestDelete(stat.habit)}
+                    onCompleteGoal={onCompleteGoal}
                   />
                 );
               })}

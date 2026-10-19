@@ -26,6 +26,7 @@ import {
   ShieldCheck,
   LogIn,
   LogOut,
+  Coins,
 } from 'lucide-react';
 import { AppSettings, HabitColor, Category, Habit, UserProfile } from '../../types';
 import { storage } from '../../storage/storage';
@@ -50,6 +51,7 @@ interface Props {
   onOpenProfile?: () => void;
   onOpenCategoryManager?: () => void;
   onOpenAuthModal?: () => void;
+  onOpenWallet?: () => void;
   onUpdateSettings: (settings: Partial<AppSettings>) => void;
   onRefreshData: () => void;
 }
@@ -62,6 +64,7 @@ export const SettingsScreen: React.FC<Props> = ({
   onOpenProfile,
   onOpenCategoryManager,
   onOpenAuthModal,
+  onOpenWallet,
   onUpdateSettings,
   onRefreshData,
 }) => {
@@ -360,6 +363,38 @@ export const SettingsScreen: React.FC<Props> = ({
               })}
             </div>
           </div>
+
+          {/* Milestones & Token Rewards Section */}
+          <div className="rounded-3xl border border-slate-200/90 dark:border-slate-800/90 bg-white dark:bg-slate-900 p-5 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-500">
+                  <Coins className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                    Milestones & Token Rewards
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    Earn HabitPulse Tokens for streak consistency
+                  </p>
+                </div>
+              </div>
+
+              {onOpenWallet && (
+                <button
+                  onClick={onOpenWallet}
+                  className="flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 text-xs font-bold shadow-xs transition cursor-pointer"
+                >
+                  <Coins className="h-3.5 w-3.5" />
+                  <span>Configure</span>
+                </button>
+              )}
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              Set custom completion milestones (e.g. 7, 20, 30, 60, 90 days), configure token rewards per milestone, and inspect your full transaction ledger.
+            </p>
+          </div>
         </div>
 
         {/* Right Column */}
@@ -632,12 +667,12 @@ export const SettingsScreen: React.FC<Props> = ({
                 </span>
               </div>
 
-              <div className="grid grid-cols-3 gap-2 text-center text-xs">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
                 <div className="rounded-xl bg-white dark:bg-slate-900 p-2 border border-slate-200/60 dark:border-slate-800">
                   <span className="font-extrabold text-indigo-600 dark:text-indigo-400 text-sm block">
                     {habits.length}
                   </span>
-                  <span className="text-[10px] text-slate-400 font-medium">Habits</span>
+                  <span className="text-[10px] text-slate-400 font-medium">Habits & Goals</span>
                 </div>
 
                 <div className="rounded-xl bg-white dark:bg-slate-900 p-2 border border-slate-200/60 dark:border-slate-800">
@@ -645,6 +680,13 @@ export const SettingsScreen: React.FC<Props> = ({
                     {categories.length}
                   </span>
                   <span className="text-[10px] text-slate-400 font-medium">Categories</span>
+                </div>
+
+                <div className="rounded-xl bg-white dark:bg-slate-900 p-2 border border-slate-200/60 dark:border-slate-800">
+                  <span className="font-extrabold text-amber-500 text-sm block">
+                    ✓
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-medium">Tokens & Milestones</span>
                 </div>
 
                 <div className="rounded-xl bg-white dark:bg-slate-900 p-2 border border-slate-200/60 dark:border-slate-800">

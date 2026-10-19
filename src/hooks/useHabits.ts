@@ -1,11 +1,20 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import confetti from 'canvas-confetti';
-import { Habit, HabitLogs, AppSettings, HabitComputedStats, Category, UserProfile } from '../types';
+import {
+  Habit,
+  HabitLogs,
+  AppSettings,
+  HabitComputedStats,
+  Category,
+  UserProfile,
+  LoginStreakData,
+} from '../types';
 import {
   storage,
   DEFAULT_SETTINGS,
   DEFAULT_CATEGORIES,
   DEFAULT_PROFILE,
+  DEFAULT_LOGIN_STREAK,
   INITIAL_HABITS,
   generateStarterLogs,
 } from '../storage/storage';
@@ -13,6 +22,7 @@ import { getTodayKey } from '../utils/date';
 import { computeHabitStats, isHabitScheduledOnDate } from '../utils/streaks';
 import { sound, triggerHaptic } from '../utils/sound';
 import { checkHabitReminders } from '../utils/notifications';
+import { useMilestones } from './useMilestones';
 
 export function useHabits() {
   const [habits, setHabits] = useState<Habit[]>(INITIAL_HABITS);
@@ -20,25 +30,55 @@ export function useHabits() {
   const [logs, setLogs] = useState<HabitLogs>(() => generateStarterLogs(INITIAL_HABITS));
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [profile, setProfile] = useState<UserProfile>(DEFAULT_PROFILE);
+  const [loginStreak, setLoginStreak] = useState<LoginStreakData>(DEFAULT_LOGIN_STREAK);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedDateKey, setSelectedDateKey] = useState<string>(getTodayKey());
   const [showCelebrationModal, setShowCelebrationModal] = useState(false);
 
-  // Initial load
+  // Hook for Milestones & Token Ledger Management
+  const {
+    milestones,
+    transactions,
+    milestoneClaims,
+    tokenBalance,
+    totalTokensEarned,
+    newlyAwardedMilestone,
+    setNewlyAwardedMilestone,
+    evaluateAndAwardMilestones,
+    getHabitProgress,
+    getNextMilestoneForHabit,
+    addMilestone,
+    updateMilestone,
+    deleteMilestone,
+    toggleMilestone,
+    refreshMilestones,
+  } = useMilestones();
+
+  // Initial load & recording daily login
   const loadData = useCallback(async () => {
     try {
-      const [savedHabits, savedLogs, savedCategories, savedSettings, savedProfile] = await Promise.all([
+      const [
+        savedHabits,
+        savedLogs,
+        savedCategories,
+        savedSettings,
+        savedProfile,
+        recordedLogin,
+      ] = await Promise.all([
         storage.getHabits(),
         storage.getLogs(),
         storage.getCategories(),
         storage.getSettings(),
         storage.getProfile(),
+        storage.recordDailyLogin(),
       ]);
+
       if (savedHabits && savedHabits.length > 0) setHabits(savedHabits);
       if (savedLogs) setLogs(savedLogs);
       if (savedCategories && savedCategories.length > 0) setCategories(savedCategories);
       if (savedSettings) setSettings(savedSettings);
       if (savedProfile) setProfile(savedProfile);
+      if (recordedLogin) setLoginStreak(recordedLogin);
     } catch (e) {
       console.error('Failed to load habit data from storage:', e);
     } finally {
@@ -55,13 +95,18 @@ export function useHabits() {
     const handleCategoriesChange = () => storage.getCategories().then(setCategories);
     const handleSettingsChange = () => storage.getSettings().then(setSettings);
     const handleProfileChange = () => storage.getProfile().then(setProfile);
-    const handleReset = () => loadData();
+    const handleLoginStreakChange = () => storage.getLoginStreak().then(setLoginStreak);
+    const handleReset = () => {
+      loadData();
+      refreshMilestones();
+    };
 
     window.addEventListener('habitpulse-habits-changed', handleHabitsChange);
     window.addEventListener('habitpulse-logs-changed', handleLogsChange);
     window.addEventListener('habitpulse-categories-changed', handleCategoriesChange);
     window.addEventListener('habitpulse-settings-changed', handleSettingsChange);
     window.addEventListener('habitpulse-profile-changed', handleProfileChange);
+    window.addEventListener('habitpulse-login-streak-changed', handleLoginStreakChange);
     window.addEventListener('habitpulse-reset', handleReset);
 
     return () => {
@@ -70,9 +115,10 @@ export function useHabits() {
       window.removeEventListener('habitpulse-categories-changed', handleCategoriesChange);
       window.removeEventListener('habitpulse-settings-changed', handleSettingsChange);
       window.removeEventListener('habitpulse-profile-changed', handleProfileChange);
+      window.removeEventListener('habitpulse-login-streak-changed', handleLoginStreakChange);
       window.removeEventListener('habitpulse-reset', handleReset);
     };
-  }, [loadData]);
+  }, [loadData, refreshMilestones]);
 
   // Periodic reminder checking
   useEffect(() => {
@@ -151,10 +197,32 @@ export function useHabits() {
       setLogs(newLogs);
       await storage.saveLogs(newLogs);
 
+      const targetHabit = habits.find((h) => h.id === habitId);
+
       // Sound and Vibration API Haptic feedback
       if (nextVal) {
         sound.playCheck(settings.soundEnabled);
         triggerHaptic('complete', settings.hapticsEnabled);
+
+        // If this habit is a one-time task, complete its goal
+        if (targetHabit && targetHabit.goalType === 'one_time' && !targetHabit.isGoalCompleted) {
+          const updatedHabit: Habit = {
+            ...targetHabit,
+            isGoalCompleted: true,
+            goalCompletedAt: new Date().toISOString(),
+          };
+          const updatedList = habits.map((h) => (h.id === habitId ? updatedHabit : h));
+          setHabits(updatedList);
+          await storage.saveHabits(updatedList);
+        }
+
+        // EVALUATE TOKEN MILESTONES (ONLY when habit is actually completed!)
+        if (targetHabit && !targetHabit.archived) {
+          await evaluateAndAwardMilestones(targetHabit, newLogs, dateKey, {
+            soundEnabled: settings.soundEnabled,
+            hapticsEnabled: settings.hapticsEnabled,
+          });
+        }
 
         // Check if this check completes all scheduled habits for this date
         const scheduledToday = habits.filter(
@@ -164,7 +232,7 @@ export function useHabits() {
           (h) => (h.id === habitId ? nextVal : !!(newLogs[h.id] && newLogs[h.id][dateKey]))
         );
 
-        if (allCompletedNow && scheduledToday.length > 0) {
+        if (allCompletedNow && scheduledToday.length > 0 && !newlyAwardedMilestone) {
           // Trigger celebration
           setTimeout(() => {
             sound.playCelebration(settings.soundEnabled);
@@ -185,9 +253,28 @@ export function useHabits() {
       } else {
         sound.playUncheck(settings.soundEnabled);
         triggerHaptic('uncheck', settings.hapticsEnabled);
+
+        // If unchecking a one-time task that was marked completed today
+        if (targetHabit && targetHabit.goalType === 'one_time' && targetHabit.isGoalCompleted) {
+          const updatedHabit: Habit = {
+            ...targetHabit,
+            isGoalCompleted: false,
+            goalCompletedAt: undefined,
+          };
+          const updatedList = habits.map((h) => (h.id === habitId ? updatedHabit : h));
+          setHabits(updatedList);
+          await storage.saveHabits(updatedList);
+        }
       }
     },
-    [logs, habits, selectedDateKey, settings]
+    [
+      logs,
+      habits,
+      selectedDateKey,
+      settings,
+      evaluateAndAwardMilestones,
+      newlyAwardedMilestone,
+    ]
   );
 
   // Add new habit
@@ -244,6 +331,27 @@ export function useHabits() {
     [habits, settings]
   );
 
+  // Mark a goal as completed directly
+  const completeGoal = useCallback(
+    async (habitId: string) => {
+      const target = habits.find((h) => h.id === habitId);
+      if (!target) return;
+
+      const updated: Habit = {
+        ...target,
+        isGoalCompleted: true,
+        goalCompletedAt: new Date().toISOString(),
+      };
+      const updatedList = habits.map((h) => (h.id === habitId ? updated : h));
+      setHabits(updatedList);
+      await storage.saveHabits(updatedList);
+
+      sound.playCelebration(settings.soundEnabled);
+      triggerHaptic('celebration', settings.hapticsEnabled);
+    },
+    [habits, settings]
+  );
+
   // Delete habit permanently
   const deleteHabit = useCallback(
     async (habitId: string) => {
@@ -284,7 +392,6 @@ export function useHabits() {
       setCategories(updated);
       await storage.saveCategories(updated);
 
-      // If category name or color changed, also sync habits linked to it
       if (updates.name || updates.color) {
         const updatedHabits = habits.map((h) => {
           if (h.categoryId === id) {
@@ -337,6 +444,12 @@ export function useHabits() {
     logs,
     settings,
     profile,
+    milestones,
+    transactions,
+    tokenBalance,
+    totalTokensEarned,
+    milestoneClaims,
+    loginStreak,
     isLoading,
     selectedDateKey,
     setSelectedDateKey,
@@ -349,7 +462,14 @@ export function useHabits() {
     addHabit,
     updateHabit,
     toggleArchiveHabit,
+    completeGoal,
     deleteHabit,
+    addMilestone,
+    updateMilestone,
+    deleteMilestone,
+    toggleMilestone,
+    getHabitProgress,
+    getNextMilestoneForHabit,
     addCategory,
     updateCategory,
     deleteCategory,
@@ -358,5 +478,7 @@ export function useHabits() {
     refreshData: loadData,
     showCelebrationModal,
     setShowCelebrationModal,
+    newlyAwardedMilestone,
+    setNewlyAwardedMilestone,
   };
 }

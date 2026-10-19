@@ -27,6 +27,7 @@
  */
 
 import { Habit, HabitLogs, HabitComputedStats } from '../types';
+import { computeHabitDeadline } from './deadlines';
 import {
   formatDateKey,
   getTodayKey,
@@ -334,6 +335,9 @@ export function computeHabitStats(
     };
   }
 
+  // Calculate deadline and goal metrics
+  const deadlineInfo = computeHabitDeadline(habit, habitLogs);
+
   return {
     habit,
     currentStreak,
@@ -344,6 +348,10 @@ export function computeHabitStats(
     isCompletedToday,
     lastCompletedDate: completedDateKeys.sort().reverse()[0],
     weeklyProgress,
+    goalStatus: deadlineInfo?.status,
+    remainingTimeText: deadlineInfo?.remainingText,
+    isOverdue: deadlineInfo?.isOverdue,
+    goalProgress: deadlineInfo?.progress,
   };
 }
 

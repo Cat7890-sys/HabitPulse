@@ -15,6 +15,8 @@ import { ProfileModal } from './components/profile/ProfileModal';
 import { AuthModal } from './components/auth/AuthModal';
 import { DataMigrationModal } from './components/auth/DataMigrationModal';
 import { OfflineIndicator } from './components/common/OfflineIndicator';
+import { TokenWalletModal } from './components/wallet/TokenWalletModal';
+import { MilestoneCelebrationModal } from './components/wallet/MilestoneCelebrationModal';
 import { Sparkles } from 'lucide-react';
 
 export default function App() {
@@ -23,6 +25,7 @@ export default function App() {
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
   const [habitToEdit, setHabitToEdit] = useState<Habit | null>(null);
   const [habitToDelete, setHabitToDelete] = useState<Habit | null>(null);
 
@@ -32,6 +35,11 @@ export default function App() {
     logs,
     settings,
     profile,
+    milestones,
+    transactions,
+    tokenBalance,
+    totalTokensEarned,
+    loginStreak,
     isLoading,
     selectedDateKey,
     setSelectedDateKey,
@@ -42,7 +50,12 @@ export default function App() {
     addHabit,
     updateHabit,
     toggleArchiveHabit,
+    completeGoal,
     deleteHabit,
+    addMilestone,
+    updateMilestone,
+    deleteMilestone,
+    toggleMilestone,
     addCategory,
     updateCategory,
     deleteCategory,
@@ -51,6 +64,8 @@ export default function App() {
     refreshData,
     showCelebrationModal,
     setShowCelebrationModal,
+    newlyAwardedMilestone,
+    setNewlyAwardedMilestone,
   } = useHabits();
 
   // Pending habits for badge counter
@@ -109,14 +124,17 @@ export default function App() {
       {/* Offline Status Toast */}
       <OfflineIndicator />
 
-      {/* Sticky Header with Desktop Navigation */}
+      {/* Sticky Header with Desktop Navigation, Tokens & Login Streak */}
       <Header
         activeTab={activeTab}
         computedStats={computedStats}
         profile={profile}
+        tokenBalance={tokenBalance}
+        loginStreak={loginStreak}
         onOpenAddModal={handleOpenAdd}
         onOpenProfileModal={() => setIsProfileModalOpen(true)}
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        onOpenWallet={() => setIsWalletModalOpen(true)}
         onTabChange={setActiveTab}
         pendingTodayCount={pendingTodayCount}
       />
@@ -132,10 +150,17 @@ export default function App() {
             selectedDateKey={selectedDateKey}
             onSelectDate={setSelectedDateKey}
             todayProgress={todayProgress}
+            tokenBalance={tokenBalance}
+            totalTokensEarned={totalTokensEarned}
+            loginStreak={loginStreak}
+            transactions={transactions}
+            milestones={milestones}
             onToggleHabit={toggleHabit}
             onOpenAddModal={handleOpenAdd}
             onEditHabit={handleEditHabit}
             onRequestDelete={(h) => setHabitToDelete(h)}
+            onCompleteGoal={completeGoal}
+            onOpenWallet={() => setIsWalletModalOpen(true)}
           />
         )}
 
@@ -159,7 +184,12 @@ export default function App() {
             logs={logs}
             computedStats={allComputedStats}
             profile={profile}
+            loginStreak={loginStreak}
+            tokenBalance={tokenBalance}
+            totalTokensEarned={totalTokensEarned}
+            transactions={transactions}
             onOpenProfile={() => setIsProfileModalOpen(true)}
+            onOpenWallet={() => setIsWalletModalOpen(true)}
           />
         )}
 
@@ -172,6 +202,7 @@ export default function App() {
             onOpenProfile={() => setIsProfileModalOpen(true)}
             onOpenCategoryManager={() => setIsCategoryModalOpen(true)}
             onOpenAuthModal={() => setIsAuthModalOpen(true)}
+            onOpenWallet={() => setIsWalletModalOpen(true)}
             onUpdateSettings={updateSettings}
             onRefreshData={refreshData}
           />
@@ -207,6 +238,33 @@ export default function App() {
         onAddCategory={addCategory}
         onUpdateCategory={updateCategory}
         onDeleteCategory={deleteCategory}
+      />
+
+      {/* Token Wallet & Milestones Manager Modal */}
+      <TokenWalletModal
+        isOpen={isWalletModalOpen}
+        onClose={() => setIsWalletModalOpen(false)}
+        tokenBalance={tokenBalance}
+        totalTokensEarned={totalTokensEarned}
+        transactions={transactions}
+        milestones={milestones}
+        habits={habits}
+        computedStats={allComputedStats}
+        loginStreak={loginStreak}
+        onAddMilestone={addMilestone}
+        onUpdateMilestone={updateMilestone}
+        onDeleteMilestone={deleteMilestone}
+        onToggleMilestone={toggleMilestone}
+      />
+
+      {/* Milestone Completion Celebration Modal */}
+      <MilestoneCelebrationModal
+        award={newlyAwardedMilestone}
+        onClose={() => setNewlyAwardedMilestone(null)}
+        onOpenWallet={() => {
+          setNewlyAwardedMilestone(null);
+          setIsWalletModalOpen(true);
+        }}
       />
 
       {/* Profile Maker & Customization Modal */}

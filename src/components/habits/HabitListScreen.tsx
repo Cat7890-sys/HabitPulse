@@ -17,6 +17,9 @@ import {
   Sparkles,
   Archive,
   ArchiveRestore,
+  Clock,
+  AlertCircle,
+  Target,
 } from 'lucide-react';
 import { Habit, HabitComputedStats, Category } from '../../types';
 import { COLOR_SCHEMES } from '../common/ColorMap';
@@ -206,6 +209,11 @@ export const HabitListScreen: React.FC<Props> = ({
                 <h4 className="text-sm font-bold text-slate-900 dark:text-white leading-snug">
                   {habit.name}
                 </h4>
+                {habit.goalType === 'one_time' && (
+                  <span className="rounded-md bg-blue-500/15 px-1.5 py-0.5 text-[9px] font-extrabold text-blue-600 dark:text-blue-400">
+                    Task
+                  </span>
+                )}
                 {isArchived && (
                   <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 dark:bg-amber-950/80 px-2 py-0.5 text-[10px] font-extrabold text-amber-700 dark:text-amber-400">
                     <Archive className="h-2.5 w-2.5" />
@@ -214,7 +222,35 @@ export const HabitListScreen: React.FC<Props> = ({
                 )}
               </div>
 
+              {habit.description && (
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5">
+                  {habit.description}
+                </p>
+              )}
+
               <div className="flex flex-wrap items-center gap-1.5 mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                {/* Target Deadline Badge */}
+                {stat.remainingTimeText && (
+                  <span
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-bold text-[10px] border ${
+                      stat.isOverdue
+                        ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30'
+                        : stat.goalStatus === 'completed'
+                        ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+                        : 'bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 border-indigo-500/20'
+                    }`}
+                  >
+                    {stat.isOverdue ? (
+                      <AlertCircle className="h-2.5 w-2.5" />
+                    ) : stat.goalStatus === 'completed' ? (
+                      <CheckCircle2 className="h-2.5 w-2.5" />
+                    ) : (
+                      <Clock className="h-2.5 w-2.5" />
+                    )}
+                    <span>{stat.remainingTimeText}</span>
+                  </span>
+                )}
+
                 {/* Category Tag Badge */}
                 {category ? (
                   <span

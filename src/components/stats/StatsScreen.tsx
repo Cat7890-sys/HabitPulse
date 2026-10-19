@@ -1,6 +1,24 @@
 import React from 'react';
-import { Flame, Trophy, CheckCircle, Target, Award, ArrowUpRight } from 'lucide-react';
-import { Habit, HabitLogs, HabitComputedStats, Category, UserProfile } from '../../types';
+import {
+  Flame,
+  Trophy,
+  CheckCircle,
+  Target,
+  Award,
+  ArrowUpRight,
+  Zap,
+  Coins,
+  ChevronRight,
+} from 'lucide-react';
+import {
+  Habit,
+  HabitLogs,
+  HabitComputedStats,
+  Category,
+  UserProfile,
+  LoginStreakData,
+  TokenTransaction,
+} from '../../types';
 import { Heatmap90Days } from './Heatmap90Days';
 import { WeeklyChart } from './WeeklyChart';
 import { WeeklyGoalProgress } from './WeeklyGoalProgress';
@@ -14,7 +32,12 @@ interface Props {
   logs: HabitLogs;
   computedStats: HabitComputedStats[];
   profile?: UserProfile;
+  loginStreak: LoginStreakData;
+  tokenBalance: number;
+  totalTokensEarned: number;
+  transactions?: TokenTransaction[];
   onOpenProfile?: () => void;
+  onOpenWallet?: () => void;
   onSelectHabit?: (habit: Habit) => void;
 }
 
@@ -24,7 +47,12 @@ export const StatsScreen: React.FC<Props> = ({
   logs,
   computedStats,
   profile,
+  loginStreak,
+  tokenBalance,
+  totalTokensEarned,
+  transactions = [],
   onOpenProfile,
+  onOpenWallet,
 }) => {
   // Compute overall KPI metrics
   const totalCheckins = React.useMemo(() => {
@@ -59,6 +87,76 @@ export const StatsScreen: React.FC<Props> = ({
         />
       )}
 
+      {/* Rewards & Login Streak Highlight Banner */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        {/* Token Rewards Wallet Card */}
+        <div
+          onClick={onOpenWallet}
+          className="group rounded-3xl border border-amber-200/90 dark:border-amber-900/40 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent dark:from-amber-950/30 dark:via-slate-900 dark:to-slate-900 p-4 shadow-xs transition hover:border-amber-300 dark:hover:border-amber-800 cursor-pointer"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500 text-slate-950 shadow-xs">
+                <Coins className="h-4 w-4" />
+              </div>
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                  Token Wallet
+                </span>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Habit completion rewards
+                </p>
+              </div>
+            </div>
+
+            <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-amber-600 group-hover:translate-x-0.5 transition" />
+          </div>
+
+          <div className="mt-3 flex items-baseline justify-between">
+            <div>
+              <span className="text-2xl font-black text-slate-900 dark:text-white">
+                {tokenBalance.toLocaleString()}
+              </span>
+              <span className="text-xs font-bold text-slate-500 ml-1">tokens</span>
+            </div>
+            <span className="text-xs text-slate-400 font-medium">
+              {totalTokensEarned} lifetime earned
+            </span>
+          </div>
+        </div>
+
+        {/* Daily App Login Streak (Separate System) */}
+        <div className="rounded-3xl border border-indigo-200/90 dark:border-indigo-900/40 bg-gradient-to-br from-indigo-500/10 via-indigo-500/5 to-transparent dark:from-indigo-950/30 dark:via-slate-900 dark:to-slate-900 p-4 shadow-xs">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-xs">
+                <Zap className="h-4 w-4 fill-white/20" />
+              </div>
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-400">
+                  Daily App Login Streak
+                </span>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Consistency in opening HabitPulse
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-3 flex items-baseline justify-between">
+            <div>
+              <span className="text-2xl font-black text-slate-900 dark:text-white">
+                {loginStreak.currentStreak}
+              </span>
+              <span className="text-xs font-bold text-slate-500 ml-1">consecutive days</span>
+            </div>
+            <span className="text-xs text-slate-400 font-medium">
+              Personal Best: {loginStreak.longestStreak} days
+            </span>
+          </div>
+        </div>
+      </div>
+
       {/* KPI Overview Grid - 2 cols on mobile, 4 cols on tablet & desktop */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {/* Total Check-ins */}
@@ -83,7 +181,7 @@ export const StatsScreen: React.FC<Props> = ({
         <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800/90 bg-white dark:bg-slate-900 p-4 shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-              Best Streak
+              Best Habit Streak
             </span>
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400">
               <Trophy className="h-4 w-4" />
@@ -93,7 +191,7 @@ export const StatsScreen: React.FC<Props> = ({
             {bestOverallStreak} <span className="text-xs font-bold text-slate-400">days</span>
           </div>
           <span className="text-[10px] text-slate-400 font-medium">
-            Personal record
+            Habit streak record
           </span>
         </div>
 

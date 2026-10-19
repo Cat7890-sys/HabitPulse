@@ -8,8 +8,10 @@ import {
   LayoutList,
   BarChart3,
   Settings,
+  Coins,
+  Zap,
 } from 'lucide-react';
-import { ActiveTab, HabitComputedStats, UserProfile } from '../../types';
+import { ActiveTab, HabitComputedStats, UserProfile, LoginStreakData } from '../../types';
 import { PWAInstallButton } from '../common/PWAInstallButton';
 import { SyncStatusBadge } from '../common/SyncStatusBadge';
 import { COLOR_SCHEMES } from '../common/ColorMap';
@@ -19,9 +21,12 @@ interface Props {
   activeTab: ActiveTab;
   computedStats: HabitComputedStats[];
   profile?: UserProfile;
+  tokenBalance?: number;
+  loginStreak?: LoginStreakData;
   onOpenAddModal: () => void;
   onOpenProfileModal?: () => void;
   onOpenAuthModal?: () => void;
+  onOpenWallet?: () => void;
   onTabChange?: (tab: ActiveTab) => void;
   pendingTodayCount?: number;
 }
@@ -30,9 +35,12 @@ export const Header: React.FC<Props> = ({
   activeTab,
   computedStats,
   profile,
+  tokenBalance = 0,
+  loginStreak,
   onOpenAddModal,
   onOpenProfileModal,
   onOpenAuthModal,
+  onOpenWallet,
   onTabChange,
   pendingTodayCount = 0,
 }) => {
@@ -57,9 +65,9 @@ export const Header: React.FC<Props> = ({
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-200/80 dark:border-slate-800/80 bg-white/85 dark:bg-slate-950/85 backdrop-blur-md pt-safe transition-all">
-      <div className="mx-auto flex max-w-md md:max-w-4xl lg:max-w-6xl items-center justify-between gap-4 px-3 sm:px-6 py-2.5 sm:py-3">
+      <div className="mx-auto flex max-w-md md:max-w-4xl lg:max-w-6xl items-center justify-between gap-2 sm:gap-4 px-3 sm:px-6 py-2.5 sm:py-3">
         {/* Left Section: Branding & Desktop Navigation Menu */}
-        <div className="flex items-center gap-4 lg:gap-8 min-w-0">
+        <div className="flex items-center gap-3 sm:gap-4 lg:gap-8 min-w-0 shrink">
           {/* Brand Logo & Title */}
           <div className="flex items-center gap-2.5 shrink-0">
             <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 shadow-md shadow-indigo-500/25 shrink-0">
@@ -103,18 +111,41 @@ export const Header: React.FC<Props> = ({
         </div>
 
         {/* Right Section: Action Controls & User Status */}
-        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0 flex-nowrap">
+          {/* Token Wallet Badge / Button */}
+          {onOpenWallet && (
+            <button
+              onClick={onOpenWallet}
+              title={`HabitPulse Tokens: ${tokenBalance}. Click to open Token Wallet.`}
+              className="relative shrink-0 whitespace-nowrap z-10 flex items-center gap-1.5 rounded-full bg-amber-500/15 hover:bg-amber-500/25 active:scale-95 px-2.5 py-1 text-xs font-black text-amber-700 dark:text-amber-400 border border-amber-500/30 shadow-2xs transition cursor-pointer"
+            >
+              <Coins className="h-3.5 w-3.5 shrink-0 fill-amber-500 text-amber-500" />
+              <span className="shrink-0">{tokenBalance}</span>
+            </button>
+          )}
+
+          {/* Daily App Login Streak (Distinct from habit top streak flame) */}
+          {loginStreak && loginStreak.currentStreak > 0 && (
+            <div
+              title={`Daily App Login Streak: ${loginStreak.currentStreak} consecutive days opening HabitPulse (Best: ${loginStreak.longestStreak}d)`}
+              className="hidden sm:flex items-center gap-1 rounded-full bg-indigo-500/10 dark:bg-indigo-500/20 px-2 py-0.5 sm:px-2.5 sm:py-1 text-xs font-bold text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 shadow-xs shrink-0"
+            >
+              <Zap className="h-3 w-3 fill-indigo-500 text-indigo-500" />
+              <span>{loginStreak.currentStreak}d</span>
+            </div>
+          )}
+
           {/* Sync Status Badge */}
-          <SyncStatusBadge showText={false} />
+          <SyncStatusBadge showText={false} className="hidden min-[480px]:inline-flex shrink-0" />
 
           {/* PWA Install Button */}
           <PWAInstallButton variant="button" />
 
-          {/* Top Streak Badge */}
+          {/* Top Habit Streak Badge */}
           {topStreak > 0 && (
             <div
-              title={`Your top current streak is ${topStreak} days!`}
-              className="flex items-center gap-1 rounded-full bg-amber-500/10 dark:bg-amber-500/20 px-2 py-0.5 sm:px-2.5 sm:py-1 text-xs font-bold text-amber-600 dark:text-amber-400 border border-amber-500/20 shadow-xs"
+              title={`Your top current habit streak is ${topStreak} days!`}
+              className="hidden min-[380px]:flex items-center gap-1 rounded-full bg-amber-500/10 dark:bg-amber-500/20 px-2 py-0.5 sm:px-2.5 sm:py-1 text-xs font-bold text-amber-600 dark:text-amber-400 border border-amber-500/20 shadow-xs shrink-0"
             >
               <Flame className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
               <span>{topStreak}</span>

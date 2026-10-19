@@ -5,11 +5,22 @@
  * enqueues mutations in syncQueue, and syncs asynchronously to Supabase cloud.
  */
 
-import { Habit, HabitLogs, AppSettings, Category, UserProfile } from '../types';
+import {
+  Habit,
+  HabitLogs,
+  AppSettings,
+  Category,
+  UserProfile,
+  MilestoneConfig,
+  TokenTransaction,
+  HabitMilestoneClaim,
+  LoginStreakData,
+} from '../types';
 import { getTodayKey, addDaysToDateKey } from '../utils/date';
 import { idbStorage } from './db';
 import { syncQueue } from '../sync/syncQueue';
 import { syncManager } from '../sync/syncManager';
+import { DEFAULT_MILESTONES } from '../utils/rewards';
 
 const STORAGE_KEYS = {
   HABITS: 'habitpulse_habits_v1',
@@ -17,6 +28,10 @@ const STORAGE_KEYS = {
   SETTINGS: 'habitpulse_settings_v1',
   CATEGORIES: 'habitpulse_categories_v1',
   PROFILE: 'habitpulse_profile_v1',
+  MILESTONES: 'habitpulse_milestones_v1',
+  TRANSACTIONS: 'habitpulse_transactions_v1',
+  CLAIMS: 'habitpulse_claims_v1',
+  LOGIN_STREAK: 'habitpulse_login_streak_v1',
 };
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -47,6 +62,13 @@ export const DEFAULT_CATEGORIES: Category[] = [
   { id: 'cat-routine', name: 'Routine', color: 'cyan', emoji: '⏰' },
 ];
 
+export const DEFAULT_LOGIN_STREAK: LoginStreakData = {
+  currentStreak: 0,
+  longestStreak: 0,
+  lastLoginDate: '',
+  history: [],
+};
+
 export const INITIAL_HABITS: Habit[] = [
   {
     id: 'habit-1',
@@ -60,6 +82,8 @@ export const INITIAL_HABITS: Habit[] = [
     categoryId: 'cat-health',
     createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
     order: 0,
+    goalType: 'recurring',
+    description: 'Drink fresh water first thing in the morning',
   },
   {
     id: 'habit-2',
@@ -73,6 +97,8 @@ export const INITIAL_HABITS: Habit[] = [
     categoryId: 'cat-fitness',
     createdAt: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000).toISOString(),
     order: 1,
+    goalType: 'recurring',
+    description: 'Keep body energized with light cardio or gym',
   },
   {
     id: 'habit-3',
@@ -86,6 +112,8 @@ export const INITIAL_HABITS: Habit[] = [
     categoryId: 'cat-learning',
     createdAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
     order: 2,
+    goalType: 'recurring',
+    description: 'Non-fiction book or technical literature',
   },
   {
     id: 'habit-4',
@@ -99,6 +127,8 @@ export const INITIAL_HABITS: Habit[] = [
     categoryId: 'cat-mind',
     createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
     order: 3,
+    goalType: 'recurring',
+    description: 'Calm the mind before diving into tasks',
   },
   {
     id: 'habit-5',
@@ -112,6 +142,8 @@ export const INITIAL_HABITS: Habit[] = [
     categoryId: 'cat-personal',
     createdAt: new Date(Date.now() - 18 * 24 * 60 * 60 * 1000).toISOString(),
     order: 4,
+    goalType: 'recurring',
+    description: 'Reflect on wins and plan tomorrow',
   },
 ];
 
@@ -142,6 +174,10 @@ export interface BackupData {
   logs: HabitLogs;
   categories: Category[];
   settings: AppSettings;
+  milestones?: MilestoneConfig[];
+  transactions?: TokenTransaction[];
+  milestoneClaims?: HabitMilestoneClaim[];
+  loginStreak?: LoginStreakData;
 }
 
 function safeDispatchEvent(name: string, detail?: unknown): void {
@@ -160,6 +196,14 @@ function safeGetLocalStorage(key: string): string | null {
     }
   } catch {}
   return null;
+}
+
+function safeSetLocalStorage(key: string, value: string): void {
+  try {
+    if (typeof window !== 'undefined' && 'localStorage' in window) {
+      window.localStorage.setItem(key, value);
+    }
+  } catch {}
 }
 
 export const storage = {
@@ -190,6 +234,7 @@ export const storage = {
   async saveProfile(profile: UserProfile): Promise<void> {
     try {
       await idbStorage.saveProfile(profile);
+      safeSetLocalStorage(STORAGE_KEYS.PROFILE, JSON.stringify(profile));
       await syncQueue.enqueue('profile', 'current', 'UPDATE', profile);
       syncManager.processQueue();
       safeDispatchEvent('habitpulse-profile-changed', profile);
@@ -225,6 +270,7 @@ export const storage = {
   async saveCategories(categories: Category[]): Promise<void> {
     try {
       await idbStorage.saveCategories(categories);
+      safeSetLocalStorage(STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
       for (const cat of categories) {
         await syncQueue.enqueue('category', cat.id, 'UPDATE', cat);
       }
@@ -251,6 +297,7 @@ export const storage = {
           await idbStorage.saveLogs(starterLogs);
           await idbStorage.saveCategories(DEFAULT_CATEGORIES);
           await idbStorage.saveProfile(DEFAULT_PROFILE);
+          await idbStorage.saveMilestones(DEFAULT_MILESTONES);
         }
         await idbStorage.saveHabits(habits);
       }
@@ -266,6 +313,7 @@ export const storage = {
   async saveHabits(habits: Habit[]): Promise<void> {
     try {
       await idbStorage.saveHabits(habits);
+      safeSetLocalStorage(STORAGE_KEYS.HABITS, JSON.stringify(habits));
       for (const h of habits) {
         await syncQueue.enqueue('habit', h.id, 'UPDATE', h);
       }
@@ -301,6 +349,7 @@ export const storage = {
   async saveLogs(logs: HabitLogs): Promise<void> {
     try {
       await idbStorage.saveLogs(logs);
+      safeSetLocalStorage(STORAGE_KEYS.LOGS, JSON.stringify(logs));
       Object.entries(logs).forEach(([habitId, dateMap]) => {
         Object.entries(dateMap).forEach(([dateKey, completed]) => {
           syncQueue.enqueue('completion', `${habitId}_${dateKey}`, 'UPDATE', {
@@ -330,6 +379,7 @@ export const storage = {
       });
       syncManager.processQueue();
       const currentLogs = await this.getLogs();
+      safeSetLocalStorage(STORAGE_KEYS.LOGS, JSON.stringify(currentLogs));
       safeDispatchEvent('habitpulse-logs-changed', currentLogs);
     } catch (e) {
       console.error('Error saving completion:', e);
@@ -363,6 +413,7 @@ export const storage = {
   async saveSettings(settings: AppSettings): Promise<void> {
     try {
       await idbStorage.saveSettings(settings);
+      safeSetLocalStorage(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
       await syncQueue.enqueue('settings', 'current', 'UPDATE', settings);
       syncManager.processQueue();
       safeDispatchEvent('habitpulse-settings-changed', settings);
@@ -371,24 +422,257 @@ export const storage = {
     }
   },
 
+  // ==========================================================================
+  // MILESTONE REWARDS & CONFIGURATION
+  // ==========================================================================
+
+  async getMilestones(): Promise<MilestoneConfig[]> {
+    try {
+      let milestones = await idbStorage.getMilestones();
+      if (!milestones || milestones.length === 0) {
+        const raw = safeGetLocalStorage(STORAGE_KEYS.MILESTONES);
+        if (raw) {
+          milestones = JSON.parse(raw);
+        } else {
+          milestones = DEFAULT_MILESTONES;
+        }
+        await idbStorage.saveMilestones(milestones);
+      }
+      return milestones;
+    } catch {
+      return DEFAULT_MILESTONES;
+    }
+  },
+
+  async saveMilestones(milestones: MilestoneConfig[]): Promise<void> {
+    try {
+      await idbStorage.saveMilestones(milestones);
+      safeSetLocalStorage(STORAGE_KEYS.MILESTONES, JSON.stringify(milestones));
+      safeDispatchEvent('habitpulse-milestones-changed', milestones);
+    } catch (e) {
+      console.error('Error saving milestones:', e);
+    }
+  },
+
+  // ==========================================================================
+  // TOKEN TRANSACTIONS LEDGER
+  // ==========================================================================
+
+  async getTransactions(): Promise<TokenTransaction[]> {
+    try {
+      let transactions = await idbStorage.getTransactions();
+      if (!transactions || transactions.length === 0) {
+        const raw = safeGetLocalStorage(STORAGE_KEYS.TRANSACTIONS);
+        if (raw) {
+          transactions = JSON.parse(raw);
+          await idbStorage.saveTransactions(transactions);
+        }
+      }
+      return transactions || [];
+    } catch {
+      return [];
+    }
+  },
+
+  async saveTransactions(transactions: TokenTransaction[]): Promise<void> {
+    try {
+      await idbStorage.saveTransactions(transactions);
+      safeSetLocalStorage(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(transactions));
+      safeDispatchEvent('habitpulse-transactions-changed', transactions);
+    } catch (e) {
+      console.error('Error saving transactions:', e);
+    }
+  },
+
+  async addTransactions(newTxs: TokenTransaction[]): Promise<void> {
+    if (newTxs.length === 0) return;
+    try {
+      const existing = await this.getTransactions();
+      const existingIds = new Set(existing.map((t) => t.id));
+      const toAdd = newTxs.filter((t) => !existingIds.has(t.id));
+      if (toAdd.length === 0) return;
+
+      const merged = [...existing, ...toAdd];
+      await idbStorage.saveTransactions(merged);
+      safeSetLocalStorage(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(merged));
+      safeDispatchEvent('habitpulse-transactions-changed', merged);
+    } catch (e) {
+      console.error('Error adding transactions:', e);
+    }
+  },
+
+  // ==========================================================================
+  // HABIT MILESTONE CLAIMS
+  // ==========================================================================
+
+  async getMilestoneClaims(): Promise<HabitMilestoneClaim[]> {
+    try {
+      let claims = await idbStorage.getMilestoneClaims();
+      if (!claims || claims.length === 0) {
+        const raw = safeGetLocalStorage(STORAGE_KEYS.CLAIMS);
+        if (raw) {
+          claims = JSON.parse(raw);
+          await idbStorage.saveMilestoneClaims(claims);
+        }
+      }
+      return claims || [];
+    } catch {
+      return [];
+    }
+  },
+
+  async saveMilestoneClaims(claims: HabitMilestoneClaim[]): Promise<void> {
+    try {
+      await idbStorage.saveMilestoneClaims(claims);
+      safeSetLocalStorage(STORAGE_KEYS.CLAIMS, JSON.stringify(claims));
+      safeDispatchEvent('habitpulse-claims-changed', claims);
+    } catch (e) {
+      console.error('Error saving milestone claims:', e);
+    }
+  },
+
+  async addMilestoneClaims(newClaims: HabitMilestoneClaim[]): Promise<void> {
+    if (newClaims.length === 0) return;
+    try {
+      const existing = await this.getMilestoneClaims();
+      const existingIds = new Set(existing.map((c) => c.id));
+      const toAdd = newClaims.filter((c) => !existingIds.has(c.id));
+      if (toAdd.length === 0) return;
+
+      const merged = [...existing, ...toAdd];
+      await idbStorage.saveMilestoneClaims(merged);
+      safeSetLocalStorage(STORAGE_KEYS.CLAIMS, JSON.stringify(merged));
+      safeDispatchEvent('habitpulse-claims-changed', merged);
+    } catch (e) {
+      console.error('Error adding milestone claims:', e);
+    }
+  },
+
+  // ==========================================================================
+  // DAILY LOGIN STREAK (SEPARATE FROM HABIT REWARDS)
+  // ==========================================================================
+
+  async getLoginStreak(): Promise<LoginStreakData> {
+    try {
+      let streakData = await idbStorage.getLoginStreak();
+      if (!streakData) {
+        const raw = safeGetLocalStorage(STORAGE_KEYS.LOGIN_STREAK);
+        if (raw) {
+          streakData = JSON.parse(raw);
+        } else {
+          streakData = DEFAULT_LOGIN_STREAK;
+        }
+        await idbStorage.saveLoginStreak(streakData);
+      }
+      return streakData;
+    } catch {
+      return DEFAULT_LOGIN_STREAK;
+    }
+  },
+
+  async saveLoginStreak(data: LoginStreakData): Promise<void> {
+    try {
+      await idbStorage.saveLoginStreak(data);
+      safeSetLocalStorage(STORAGE_KEYS.LOGIN_STREAK, JSON.stringify(data));
+      safeDispatchEvent('habitpulse-login-streak-changed', data);
+    } catch (e) {
+      console.error('Error saving login streak:', e);
+    }
+  },
+
+  /**
+   * Records a daily login event.
+   * Rules:
+   * - Login streaks track consecutive days a user opens HabitPulse.
+   * - Only increment ONCE per calendar day (using local dateKey).
+   * - Missed day resets active streak to 1.
+   * - Longest streak is preserved.
+   * - Never awards tokens for logging in.
+   */
+  async recordDailyLogin(): Promise<LoginStreakData> {
+    try {
+      const todayKey = getTodayKey();
+      const yesterdayKey = addDaysToDateKey(todayKey, -1);
+      const current = await this.getLoginStreak();
+
+      // If already logged in today, do not increase streak
+      if (current.lastLoginDate === todayKey) {
+        return current;
+      }
+
+      let newCurrentStreak = 1;
+      if (current.lastLoginDate === yesterdayKey) {
+        // Consecutive calendar day login
+        newCurrentStreak = (current.currentStreak || 0) + 1;
+      } else if (!current.lastLoginDate) {
+        // First login ever
+        newCurrentStreak = 1;
+      } else {
+        // Missed one or more days: reset active consecutive streak to 1
+        newCurrentStreak = 1;
+      }
+
+      const newLongestStreak = Math.max(current.longestStreak || 0, newCurrentStreak);
+      const historySet = new Set(current.history || []);
+      historySet.add(todayKey);
+
+      const updated: LoginStreakData = {
+        currentStreak: newCurrentStreak,
+        longestStreak: newLongestStreak,
+        lastLoginDate: todayKey,
+        history: (Array.from(historySet) as string[]).sort(),
+      };
+
+      await this.saveLoginStreak(updated);
+      return updated;
+    } catch (e) {
+      console.error('Error recording daily login:', e);
+      return DEFAULT_LOGIN_STREAK;
+    }
+  },
+
+  // ==========================================================================
+  // BACKUP & RESTORE
+  // ==========================================================================
+
   /**
    * Exports full database as JSON object string for backups.
    */
   async exportAllData(): Promise<string> {
-    const profile = await this.getProfile();
-    const habits = await this.getHabits();
-    const logs = await this.getLogs();
-    const categories = await this.getCategories();
-    const settings = await this.getSettings();
+    const [
+      profile,
+      habits,
+      logs,
+      categories,
+      settings,
+      milestones,
+      transactions,
+      milestoneClaims,
+      loginStreak,
+    ] = await Promise.all([
+      this.getProfile(),
+      this.getHabits(),
+      this.getLogs(),
+      this.getCategories(),
+      this.getSettings(),
+      this.getMilestones(),
+      this.getTransactions(),
+      this.getMilestoneClaims(),
+      this.getLoginStreak(),
+    ]);
 
     const backup: BackupData = {
-      version: 2,
+      version: 3,
       exportedAt: new Date().toISOString(),
       profile,
       habits,
       logs,
       categories,
       settings,
+      milestones,
+      transactions,
+      milestoneClaims,
+      loginStreak,
     };
 
     return JSON.stringify(backup, null, 2);
@@ -417,10 +701,22 @@ export const storage = {
       if (parsed.settings && typeof parsed.settings === 'object') {
         await this.saveSettings({ ...DEFAULT_SETTINGS, ...parsed.settings });
       }
+      if (Array.isArray(parsed.milestones)) {
+        await this.saveMilestones(parsed.milestones);
+      }
+      if (Array.isArray(parsed.transactions)) {
+        await this.saveTransactions(parsed.transactions);
+      }
+      if (Array.isArray(parsed.milestoneClaims)) {
+        await this.saveMilestoneClaims(parsed.milestoneClaims);
+      }
+      if (parsed.loginStreak && typeof parsed.loginStreak === 'object') {
+        await this.saveLoginStreak(parsed.loginStreak);
+      }
 
       return {
         success: true,
-        message: `Successfully restored ${parsed.habits.length} habits, categories, profile, and logs!`,
+        message: `Successfully restored ${parsed.habits.length} habits, categories, milestones, transactions, and logs!`,
         habitsCount: parsed.habits.length,
       };
     } catch {
@@ -434,6 +730,17 @@ export const storage = {
   async clearAllData(): Promise<void> {
     await idbStorage.clearAllData();
     await syncQueue.clear();
+    try {
+      localStorage.removeItem(STORAGE_KEYS.HABITS);
+      localStorage.removeItem(STORAGE_KEYS.LOGS);
+      localStorage.removeItem(STORAGE_KEYS.SETTINGS);
+      localStorage.removeItem(STORAGE_KEYS.CATEGORIES);
+      localStorage.removeItem(STORAGE_KEYS.PROFILE);
+      localStorage.removeItem(STORAGE_KEYS.MILESTONES);
+      localStorage.removeItem(STORAGE_KEYS.TRANSACTIONS);
+      localStorage.removeItem(STORAGE_KEYS.CLAIMS);
+      localStorage.removeItem(STORAGE_KEYS.LOGIN_STREAK);
+    } catch {}
     safeDispatchEvent('habitpulse-reset');
   },
 
@@ -447,5 +754,7 @@ export const storage = {
     await this.saveProfile(DEFAULT_PROFILE);
     await this.saveHabits(habits);
     await this.saveLogs(logs);
+    await this.saveMilestones(DEFAULT_MILESTONES);
+    await this.recordDailyLogin();
   },
 };

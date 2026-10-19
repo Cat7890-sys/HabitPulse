@@ -4,10 +4,19 @@
  * Local-first, offline-ready, asynchronous database layer with automatic schema migrations.
  */
 
-import { Habit, HabitLogs, AppSettings, Category, UserProfile } from '../types';
+import {
+  Habit,
+  AppSettings,
+  Category,
+  UserProfile,
+  MilestoneConfig,
+  TokenTransaction,
+  HabitMilestoneClaim,
+  LoginStreakData,
+} from '../types';
 
 const DB_NAME = 'habitpulse_idb_v1';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 export interface SyncQueueItem {
   id?: number;
@@ -57,6 +66,20 @@ function getDB(): Promise<IDBDatabase> {
           autoIncrement: true,
         });
         queueStore.createIndex('entity', 'entity');
+      }
+
+      // Version 2 stores: Tokens, Milestones, Claims, Login Streak
+      if (!db.objectStoreNames.contains('milestones')) {
+        db.createObjectStore('milestones', { keyPath: 'id' });
+      }
+      if (!db.objectStoreNames.contains('transactions')) {
+        db.createObjectStore('transactions', { keyPath: 'id' });
+      }
+      if (!db.objectStoreNames.contains('milestone_claims')) {
+        db.createObjectStore('milestone_claims', { keyPath: 'id' });
+      }
+      if (!db.objectStoreNames.contains('login_streak')) {
+        db.createObjectStore('login_streak', { keyPath: 'id' });
       }
     };
 
@@ -164,16 +187,16 @@ export const idbStorage = {
   },
 
   // LOGS / COMPLETIONS
-  async getLogs(): Promise<HabitLogs> {
+  async getLogs(): Promise<Record<string, Record<string, boolean>>> {
     const completions = await getAll<{ id: string; habitId: string; dateKey: string; completed: boolean }>('completions');
-    const logs: HabitLogs = {};
+    const logs: Record<string, Record<string, boolean>> = {};
     completions.forEach((c) => {
       if (!logs[c.habitId]) logs[c.habitId] = {};
       logs[c.habitId][c.dateKey] = c.completed;
     });
     return logs;
   },
-  async saveLogs(logs: HabitLogs): Promise<void> {
+  async saveLogs(logs: Record<string, Record<string, boolean>>): Promise<void> {
     const items: { id: string; habitId: string; dateKey: string; completed: boolean }[] = [];
     Object.entries(logs).forEach(([habitId, dateMap]) => {
       Object.entries(dateMap).forEach(([dateKey, completed]) => {
@@ -224,6 +247,48 @@ export const idbStorage = {
     await putOne('settings', { id: 'current', settings });
   },
 
+  // MILESTONES (Version 2)
+  async getMilestones(): Promise<MilestoneConfig[]> {
+    return getAll<MilestoneConfig>('milestones');
+  },
+  async saveMilestones(milestones: MilestoneConfig[]): Promise<void> {
+    await clearStore('milestones');
+    await putMany('milestones', milestones);
+  },
+
+  // TOKEN TRANSACTIONS (Version 2)
+  async getTransactions(): Promise<TokenTransaction[]> {
+    return getAll<TokenTransaction>('transactions');
+  },
+  async saveTransactions(transactions: TokenTransaction[]): Promise<void> {
+    await clearStore('transactions');
+    await putMany('transactions', transactions);
+  },
+  async addTransaction(transaction: TokenTransaction): Promise<void> {
+    await putOne('transactions', transaction);
+  },
+
+  // MILESTONE CLAIMS (Version 2)
+  async getMilestoneClaims(): Promise<HabitMilestoneClaim[]> {
+    return getAll<HabitMilestoneClaim>('milestone_claims');
+  },
+  async saveMilestoneClaims(claims: HabitMilestoneClaim[]): Promise<void> {
+    await clearStore('milestone_claims');
+    await putMany('milestone_claims', claims);
+  },
+  async addMilestoneClaim(claim: HabitMilestoneClaim): Promise<void> {
+    await putOne('milestone_claims', claim);
+  },
+
+  // LOGIN STREAK (Version 2)
+  async getLoginStreak(): Promise<LoginStreakData | null> {
+    const res = await getOne<{ id: string; data: LoginStreakData }>('login_streak', 'current');
+    return res ? res.data : null;
+  },
+  async saveLoginStreak(data: LoginStreakData): Promise<void> {
+    await putOne('login_streak', { id: 'current', data });
+  },
+
   // SYNC QUEUE
   async getSyncQueue(): Promise<SyncQueueItem[]> {
     return getAll<SyncQueueItem>('sync_queue');
@@ -253,5 +318,9 @@ export const idbStorage = {
     await clearStore('profile');
     await clearStore('settings');
     await clearStore('sync_queue');
+    await clearStore('milestones');
+    await clearStore('transactions');
+    await clearStore('milestone_claims');
+    await clearStore('login_streak');
   },
 };
