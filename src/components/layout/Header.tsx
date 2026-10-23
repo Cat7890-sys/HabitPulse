@@ -85,18 +85,19 @@ export const Header: React.FC<Props> = ({
 
           {/* Desktop Navigation Menu alongside Branding */}
           {onTabChange && (
-            <nav className="hidden md:flex items-center gap-1 rounded-xl bg-slate-100 dark:bg-slate-900 p-1 border border-slate-200/80 dark:border-slate-800" aria-label="Main Navigation">
+            <nav className="hidden md:flex items-center gap-1 rounded-xl bg-slate-100 dark:bg-slate-900 p-1 border border-slate-200 dark:border-slate-800" aria-label="Main Navigation">
               {desktopNavItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = activeTab === item.id;
                 return (
                   <button
                     key={item.id}
+                    type="button"
                     onClick={() => onTabChange(item.id)}
-                    className={`relative flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-colors cursor-pointer ${
+                    className={`relative flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500 ${
                       isActive
-                        ? 'bg-white dark:bg-slate-800 text-emerald-700 dark:text-emerald-400 font-semibold shadow-xs'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium'
+                        ? 'bg-white dark:bg-slate-800 text-emerald-800 dark:text-emerald-400 font-bold shadow-xs'
+                        : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white font-semibold'
                     }`}
                   >
                     <Icon className="h-3.5 w-3.5" aria-hidden="true" />
@@ -118,10 +119,11 @@ export const Header: React.FC<Props> = ({
           {/* Token Wallet Badge / Button */}
           {onOpenWallet && (
             <button
+              type="button"
               onClick={onOpenWallet}
               title={`HabitPulse Tokens: ${tokenBalance}. Click to open Token Wallet.`}
               aria-label={`Token Wallet: ${tokenBalance} tokens`}
-              className="relative shrink-0 whitespace-nowrap z-10 flex items-center gap-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/60 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-900/60 shadow-2xs transition cursor-pointer"
+              className="relative shrink-0 whitespace-nowrap z-10 flex items-center gap-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/60 px-2.5 py-1 text-xs font-bold text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-900/60 shadow-xs transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500"
             >
               <Coins className="h-3.5 w-3.5 shrink-0 fill-amber-500/20 text-amber-600 dark:text-amber-400" aria-hidden="true" />
               <span className="shrink-0 tabular-nums">{tokenBalance}</span>

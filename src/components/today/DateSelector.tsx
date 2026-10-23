@@ -106,7 +106,7 @@ export const DateSelector: React.FC<Props> = ({
               </h2>
               <CalendarRange className="h-3 w-3 text-slate-400" aria-hidden="true" />
             </div>
-            <span className="text-[11px] text-slate-500 dark:text-slate-400 font-normal">
+            <span className="text-xs text-slate-600 dark:text-slate-300 font-medium">
               {parseDateKey(selectedDateKey).toLocaleDateString('en-US', {
                 month: 'short',
                 day: 'numeric',
@@ -116,13 +116,13 @@ export const DateSelector: React.FC<Props> = ({
           </div>
         </button>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
           {/* Jump back to today button */}
           {!isSelectedToday && (
             <button
               type="button"
               onClick={() => onSelectDate(today)}
-              className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-1 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500"
+              className="text-xs font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-100/80 dark:bg-emerald-950/70 border border-emerald-300/80 dark:border-emerald-800 px-2.5 py-1 rounded-lg hover:bg-emerald-200/70 dark:hover:bg-emerald-900/80 transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500"
             >
               Today
             </button>
@@ -132,7 +132,7 @@ export const DateSelector: React.FC<Props> = ({
           <button
             type="button"
             onClick={() => setIsDatePickerOpen(true)}
-            className="p-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500"
+            className="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500"
             title="Pick a specific date"
             aria-label="Pick date"
           >
@@ -144,7 +144,7 @@ export const DateSelector: React.FC<Props> = ({
             <button
               type="button"
               onClick={() => onSelectDate(addDaysToDateKey(selectedDateKey, -1))}
-              className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500"
+              className="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500"
               title="Previous Day"
               aria-label="Previous Day"
             >
@@ -153,7 +153,7 @@ export const DateSelector: React.FC<Props> = ({
             <button
               type="button"
               onClick={() => onSelectDate(addDaysToDateKey(selectedDateKey, 1))}
-              className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500"
+              className="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500"
               title="Next Day"
               aria-label="Next Day"
             >
@@ -171,7 +171,7 @@ export const DateSelector: React.FC<Props> = ({
         onKeyDown={handleKeyDown}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
-        className="grid grid-cols-7 gap-1 bg-white dark:bg-slate-900 p-1.5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500"
+        className="grid grid-cols-7 gap-1 bg-white dark:bg-slate-900 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500"
       >
         {dateStrip.map((dKey) => {
           const dateObj = parseDateKey(dKey);
@@ -189,10 +189,10 @@ export const DateSelector: React.FC<Props> = ({
               aria-label={`${isCurrentToday ? 'Today, ' : ''}${dayName}, ${dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}${status === 'all' ? ' - all habits completed' : status === 'partial' ? ' - partially completed' : ''}`}
               aria-pressed={isSelected}
               aria-current={isCurrentToday ? 'date' : undefined}
-              className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl transition-all cursor-pointer relative active:scale-[0.96] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-slate-900 ${
+              className={`flex flex-col items-center justify-center py-2.5 px-1 rounded-xl transition-all cursor-pointer relative active:scale-[0.96] motion-reduce:transition-none motion-reduce:transform-none focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-slate-900 ${
                 isSelected
                   ? 'bg-slate-900 text-white dark:bg-emerald-500 dark:text-slate-950 shadow-xs'
-                  : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'
+                  : 'hover:bg-slate-100 dark:hover:bg-slate-800/90 text-slate-700 dark:text-slate-200'
               }`}
             >
               {/* Today indicator dot */}
@@ -208,12 +208,12 @@ export const DateSelector: React.FC<Props> = ({
               )}
 
               <span
-                className={`text-[10px] uppercase tracking-wider transition-colors ${
+                className={`text-[11px] uppercase tracking-wider transition-colors ${
                   isSelected
-                    ? 'font-bold text-slate-300 dark:text-slate-900/90'
+                    ? 'font-bold text-slate-300 dark:text-slate-950'
                     : isCurrentToday
-                    ? 'font-bold text-emerald-600 dark:text-emerald-400'
-                    : 'font-semibold text-slate-400 dark:text-slate-500'
+                    ? 'font-bold text-emerald-700 dark:text-emerald-400'
+                    : 'font-semibold text-slate-600 dark:text-slate-300'
                 }`}
               >
                 {dayName}
@@ -223,8 +223,8 @@ export const DateSelector: React.FC<Props> = ({
                   isSelected
                     ? 'font-extrabold text-white dark:text-slate-950'
                     : isCurrentToday
-                    ? 'font-extrabold text-emerald-700 dark:text-emerald-300'
-                    : 'font-bold text-slate-800 dark:text-slate-200'
+                    ? 'font-extrabold text-emerald-800 dark:text-emerald-300'
+                    : 'font-bold text-slate-900 dark:text-slate-100'
                 }`}
               >
                 {dayNumber}

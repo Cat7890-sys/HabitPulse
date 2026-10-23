@@ -47,17 +47,18 @@ export const BottomNav: React.FC<Props> = ({
           return (
             <button
               key={item.id}
+              type="button"
               onClick={() => onTabChange(item.id)}
               aria-label={item.label}
-              className={`relative flex min-h-[44px] min-w-[44px] flex-col items-center justify-center py-1 px-3 rounded-xl transition-colors cursor-pointer ${
+              className={`relative flex min-h-[44px] min-w-[44px] flex-col items-center justify-center py-1 px-3 rounded-xl transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500 ${
                 isActive
-                  ? 'text-emerald-700 dark:text-emerald-400 font-semibold'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 font-medium'
+                  ? 'text-emerald-800 dark:text-emerald-300 font-bold'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-medium'
               }`}
             >
               {/* Active subtle background */}
               {isActive && (
-                <span className="absolute inset-0 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 -z-10" />
+                <span className="absolute inset-0 rounded-lg bg-emerald-100/70 dark:bg-emerald-950/50 border border-emerald-200/60 dark:border-emerald-800/40 -z-10" />
               )}
 
               <div className="relative">
@@ -69,7 +70,7 @@ export const BottomNav: React.FC<Props> = ({
                 )}
               </div>
 
-              <span className="text-[11px] mt-1 tracking-tight leading-none">{item.label}</span>
+              <span className="text-xs mt-1 tracking-tight leading-none">{item.label}</span>
             </button>
           );
         })}

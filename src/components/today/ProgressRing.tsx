@@ -30,11 +30,11 @@ export const ProgressRing: React.FC<Props> = ({
   };
 
   return (
-    <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 p-5 shadow-xs transition-colors">
+    <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 shadow-xs transition-colors">
       <div className="flex items-center justify-between gap-4">
         {/* Left text metrics */}
         <div className="flex-1 space-y-1.5">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 block">
             {isToday ? 'Today’s Progress' : 'Daily Progress'}
           </span>
 
@@ -42,19 +42,19 @@ export const ProgressRing: React.FC<Props> = ({
             <span className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight tabular-nums">
               {completed}
             </span>
-            <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
+            <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
               of {total} completed
             </span>
           </div>
 
-          <p className="text-xs font-normal text-slate-600 dark:text-slate-400 leading-relaxed">
+          <p className="text-xs font-normal text-slate-700 dark:text-slate-300 leading-relaxed">
             {getMotivationalText()}
           </p>
         </div>
 
         {/* Circular Progress Ring */}
-        <div className="relative flex items-center justify-center shrink-0">
-          <svg width={size} height={size} className="transform -rotate-90">
+        <div className="relative flex items-center justify-center shrink-0" aria-label={`Progress: ${completed} of ${total} habits completed (${percentage}%)`}>
+          <svg width={size} height={size} className="transform -rotate-90 motion-reduce:transform-none">
             {/* Background Track */}
             <circle
               cx={size / 2}
@@ -76,7 +76,7 @@ export const ProgressRing: React.FC<Props> = ({
               strokeDashoffset={strokeDashoffset}
               strokeLinecap="round"
               fill="transparent"
-              className="text-emerald-600 dark:text-emerald-400 transition-all duration-300 ease-out"
+              className="text-emerald-600 dark:text-emerald-400 transition-all duration-300 ease-out motion-reduce:transition-none"
             />
           </svg>
 
@@ -86,10 +86,10 @@ export const ProgressRing: React.FC<Props> = ({
               <CheckCircle2 className="h-7 w-7 text-emerald-600 dark:text-emerald-400" aria-label="100% completed" />
             ) : (
               <>
-                <span className="text-lg font-bold text-slate-900 dark:text-white tabular-nums leading-none">
+                <span className="text-lg font-extrabold text-slate-900 dark:text-white tabular-nums leading-none">
                   {percentage}%
                 </span>
-                <span className="text-[9px] font-semibold text-slate-400 dark:text-slate-500 mt-1 uppercase tracking-wider">
+                <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 mt-1 uppercase tracking-wider">
                   done
                 </span>
               </>
