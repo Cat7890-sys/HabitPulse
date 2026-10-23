@@ -49,6 +49,7 @@ export interface Habit {
 
   // Habit Goals & Deadlines
   description?: string;
+  note?: string; // Optional note for the habit entry
   goalType?: GoalType; // 'recurring' habit or 'one_time' task
   startDate?: string; // 'YYYY-MM-DD'
   targetDate?: string; // Target completion date 'YYYY-MM-DD'

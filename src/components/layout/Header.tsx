@@ -71,19 +71,21 @@ export const Header: React.FC<Props> = ({
         <div className="flex items-center gap-3 sm:gap-4 lg:gap-8 min-w-0 shrink">
           {/* Brand Logo & Title */}
           <div className="flex items-center gap-2.5 shrink-0">
-            <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 shadow-md shadow-indigo-500/25 shrink-0">
-              <Sparkles className="h-5 w-5 text-white" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 dark:bg-emerald-500 text-emerald-400 dark:text-slate-950 shadow-xs shrink-0">
+              <svg className="h-4.5 w-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M3 12h4l3-7 4 14 3-7h4" />
+              </svg>
             </div>
             <div className="shrink-0">
-              <h1 className="text-base font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-1.5 leading-tight">
+              <span className="text-base font-bold tracking-tight text-slate-900 dark:text-white leading-tight">
                 HabitPulse
-              </h1>
+              </span>
             </div>
           </div>
 
           {/* Desktop Navigation Menu alongside Branding */}
           {onTabChange && (
-            <nav className="hidden md:flex items-center gap-1 rounded-2xl bg-slate-100/80 dark:bg-slate-900/80 p-1 border border-slate-200/60 dark:border-slate-800">
+            <nav className="hidden md:flex items-center gap-1 rounded-xl bg-slate-100 dark:bg-slate-900 p-1 border border-slate-200/80 dark:border-slate-800" aria-label="Main Navigation">
               {desktopNavItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = activeTab === item.id;
@@ -91,16 +93,16 @@ export const Header: React.FC<Props> = ({
                   <button
                     key={item.id}
                     onClick={() => onTabChange(item.id)}
-                    className={`relative flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    className={`relative flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-colors cursor-pointer ${
                       isActive
-                        ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-xs'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                        ? 'bg-white dark:bg-slate-800 text-emerald-700 dark:text-emerald-400 font-semibold shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium'
                     }`}
                   >
-                    <Icon className="h-4 w-4" />
+                    <Icon className="h-3.5 w-3.5" aria-hidden="true" />
                     <span>{item.label}</span>
                     {item.badge !== undefined && (
-                      <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-indigo-600 px-1 text-[10px] font-extrabold text-white">
+                      <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-600 px-1 text-[10px] font-bold text-white">
                         {item.badge}
                       </span>
                     )}
@@ -118,10 +120,11 @@ export const Header: React.FC<Props> = ({
             <button
               onClick={onOpenWallet}
               title={`HabitPulse Tokens: ${tokenBalance}. Click to open Token Wallet.`}
-              className="relative shrink-0 whitespace-nowrap z-10 flex items-center gap-1.5 rounded-full bg-amber-500/15 hover:bg-amber-500/25 active:scale-95 px-2.5 py-1 text-xs font-black text-amber-700 dark:text-amber-400 border border-amber-500/30 shadow-2xs transition cursor-pointer"
+              aria-label={`Token Wallet: ${tokenBalance} tokens`}
+              className="relative shrink-0 whitespace-nowrap z-10 flex items-center gap-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/60 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-900/60 shadow-2xs transition cursor-pointer"
             >
-              <Coins className="h-3.5 w-3.5 shrink-0 fill-amber-500 text-amber-500" />
-              <span className="shrink-0">{tokenBalance}</span>
+              <Coins className="h-3.5 w-3.5 shrink-0 fill-amber-500/20 text-amber-600 dark:text-amber-400" aria-hidden="true" />
+              <span className="shrink-0 tabular-nums">{tokenBalance}</span>
             </button>
           )}
 
@@ -129,10 +132,10 @@ export const Header: React.FC<Props> = ({
           {loginStreak && loginStreak.currentStreak > 0 && (
             <div
               title={`Daily App Login Streak: ${loginStreak.currentStreak} consecutive days opening HabitPulse (Best: ${loginStreak.longestStreak}d)`}
-              className="hidden sm:flex items-center gap-1 rounded-full bg-indigo-500/10 dark:bg-indigo-500/20 px-2 py-0.5 sm:px-2.5 sm:py-1 text-xs font-bold text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 shadow-xs shrink-0"
+              className="hidden sm:flex items-center gap-1 rounded-lg bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-xs font-medium text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shrink-0"
             >
-              <Zap className="h-3 w-3 fill-indigo-500 text-indigo-500" />
-              <span>{loginStreak.currentStreak}d</span>
+              <Zap className="h-3 w-3 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+              <span className="tabular-nums">{loginStreak.currentStreak}d</span>
             </div>
           )}
 
@@ -146,10 +149,10 @@ export const Header: React.FC<Props> = ({
           {topStreak > 0 && (
             <div
               title={`Your top current habit streak is ${topStreak} days!`}
-              className="hidden min-[380px]:flex items-center gap-1 rounded-full bg-amber-500/10 dark:bg-amber-500/20 px-2 py-0.5 sm:px-2.5 sm:py-1 text-xs font-bold text-amber-600 dark:text-amber-400 border border-amber-500/20 shadow-xs shrink-0"
+              className="hidden min-[380px]:flex items-center gap-1 rounded-lg bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 sm:px-2.5 sm:py-1 text-xs font-semibold text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-900/60 shadow-2xs shrink-0"
             >
-              <Flame className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
-              <span>{topStreak}</span>
+              <Flame className="h-3.5 w-3.5 fill-amber-500/20 text-amber-600 dark:text-amber-400" aria-hidden="true" />
+              <span className="tabular-nums">{topStreak}</span>
             </div>
           )}
 
@@ -159,13 +162,13 @@ export const Header: React.FC<Props> = ({
               onClick={onOpenAuthModal}
               title={user ? `Signed in as ${user.email}` : 'Sign In / Create Account'}
               aria-label="Cloud Account & Synchronization"
-              className={`flex h-9 w-9 items-center justify-center rounded-xl border transition hover:scale-105 active:scale-95 cursor-pointer ${
+              className={`flex h-9 w-9 items-center justify-center rounded-xl border transition active:scale-95 cursor-pointer ${
                 user
-                  ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400'
-                  : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'
+                  ? 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400'
+                  : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              <ShieldCheck className="h-4 w-4" />
+              <ShieldCheck className="h-4 w-4" aria-hidden="true" />
             </button>
           )}
 
@@ -175,14 +178,14 @@ export const Header: React.FC<Props> = ({
               onClick={() => onTabChange('admin')}
               title="Open Admin Dashboard"
               aria-label="Admin Dashboard"
-              className={`flex h-9 items-center gap-1.5 px-2.5 rounded-xl border transition hover:scale-105 active:scale-95 cursor-pointer ${
+              className={`flex h-9 items-center gap-1.5 px-2.5 rounded-xl border transition active:scale-95 cursor-pointer ${
                 activeTab === 'admin'
-                  ? 'bg-indigo-600 border-indigo-500 text-white shadow-md shadow-indigo-600/30'
-                  : 'bg-indigo-50 dark:bg-indigo-950/60 border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400'
+                  ? 'bg-slate-900 dark:bg-emerald-500 border-transparent text-white dark:text-slate-950 shadow-xs'
+                  : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              <ShieldCheck className="h-4 w-4" />
-              <span className="hidden sm:inline text-xs font-bold">Admin</span>
+              <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+              <span className="hidden sm:inline text-xs font-semibold">Admin</span>
             </button>
           )}
 
@@ -191,20 +194,20 @@ export const Header: React.FC<Props> = ({
             <button
               onClick={onOpenProfileModal}
               title={`Profile: ${profile.name}`}
-              aria-label="User Profile"
-              className={`flex h-9 w-9 items-center justify-center rounded-xl text-base sm:text-lg border transition hover:scale-105 active:scale-95 cursor-pointer ${scheme.bgSubtle}`}
+              aria-label={`User Profile: ${profile.name}`}
+              className="flex h-9 w-9 items-center justify-center rounded-xl text-base border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 transition hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 cursor-pointer"
             >
-              <span>{profile.avatar || '🦁'}</span>
+              <span>{profile.avatar || '👤'}</span>
             </button>
           )}
 
           {/* Quick Add Button */}
           <button
             onClick={onOpenAddModal}
-            className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-md shadow-indigo-600/30 hover:bg-indigo-700 active:scale-95 transition cursor-pointer shrink-0"
+            className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs active:scale-95 transition cursor-pointer shrink-0"
             aria-label="Add Habit"
           >
-            <Plus className="h-5 w-5" />
+            <Plus className="h-4.5 w-4.5 stroke-[2.5]" aria-hidden="true" />
           </button>
         </div>
       </div>

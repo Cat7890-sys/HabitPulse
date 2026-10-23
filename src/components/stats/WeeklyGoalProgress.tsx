@@ -151,11 +151,11 @@ export const WeeklyGoalProgress: React.FC<Props> = ({
       {/* Header */}
       <div className="flex items-start justify-between pb-3 border-b border-slate-100 dark:border-slate-800 gap-2">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 shrink-0">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 shrink-0">
             <Target className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">
               Weekly Goal Progress
             </h3>
             <p className="text-[11px] text-slate-400 font-medium">
@@ -166,11 +166,11 @@ export const WeeklyGoalProgress: React.FC<Props> = ({
 
         {/* Overall Completion Ratio Badge */}
         <div className="text-right shrink-0">
-          <div className="text-xs font-black text-indigo-600 dark:text-indigo-400 flex items-center justify-end gap-1">
+          <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center justify-end gap-1">
             <TrendingUp className="h-3.5 w-3.5" />
             <span>{overallWeekly.percentage}% Goal</span>
           </div>
-          <span className="text-[10px] text-slate-400 font-bold block">
+          <span className="text-[10px] text-slate-400 font-medium block">
             {overallWeekly.totalCompleted}/{overallWeekly.totalTarget} check-ins
           </span>
         </div>

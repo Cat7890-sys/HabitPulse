@@ -49,27 +49,27 @@ export const BottomNav: React.FC<Props> = ({
               key={item.id}
               onClick={() => onTabChange(item.id)}
               aria-label={item.label}
-              className={`relative flex min-h-[44px] min-w-[44px] flex-col items-center justify-center py-1 px-3 rounded-2xl transition-all duration-200 cursor-pointer ${
+              className={`relative flex min-h-[44px] min-w-[44px] flex-col items-center justify-center py-1 px-3 rounded-xl transition-colors cursor-pointer ${
                 isActive
-                  ? 'text-indigo-600 dark:text-indigo-400 font-semibold'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                  ? 'text-emerald-700 dark:text-emerald-400 font-semibold'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 font-medium'
               }`}
             >
-              {/* Active pill background */}
+              {/* Active subtle background */}
               {isActive && (
-                <span className="absolute inset-0 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 -z-10 animate-in fade-in zoom-in-95 duration-150" />
+                <span className="absolute inset-0 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 -z-10" />
               )}
 
               <div className="relative">
-                <Icon className={`h-5 w-5 transition-transform ${isActive ? 'scale-110' : ''}`} />
+                <Icon className={`h-4.5 w-4.5 ${isActive ? 'stroke-[2.2]' : 'stroke-[1.8]'}`} aria-hidden="true" />
                 {item.badge !== undefined && (
-                  <span className="absolute -top-1 -right-2.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-indigo-600 px-1 text-[10px] font-bold text-white shadow-xs">
+                  <span className="absolute -top-1 -right-2.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-600 px-1 text-[10px] font-bold text-white shadow-2xs">
                     {item.badge}
                   </span>
                 )}
               </div>
 
-              <span className="text-[11px] mt-1 tracking-tight">{item.label}</span>
+              <span className="text-[11px] mt-1 tracking-tight leading-none">{item.label}</span>
             </button>
           );
         })}

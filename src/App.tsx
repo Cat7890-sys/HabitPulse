@@ -18,6 +18,8 @@ import { OfflineIndicator } from './components/common/OfflineIndicator';
 import { TokenWalletModal } from './components/wallet/TokenWalletModal';
 import { MilestoneCelebrationModal } from './components/wallet/MilestoneCelebrationModal';
 import { AdminDashboard } from './components/admin/AdminDashboard';
+import { AuthGuard } from './auth/AuthGuard';
+import { useAuth } from './auth/useAuth';
 import { Sparkles } from 'lucide-react';
 
 export default function App() {
@@ -29,6 +31,8 @@ export default function App() {
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
   const [habitToEdit, setHabitToEdit] = useState<Habit | null>(null);
   const [habitToDelete, setHabitToDelete] = useState<Habit | null>(null);
+
+  const { user, isAdmin } = useAuth();
 
   const {
     habits,
@@ -109,11 +113,11 @@ export default function App() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950">
         <div className="flex flex-col items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-xl shadow-indigo-500/30 animate-pulse">
-            <Sparkles className="h-6 w-6 animate-spin" />
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-sm">
+            <div className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
           </div>
-          <span className="text-xs font-bold text-slate-400 tracking-wider uppercase">
-            Loading Habits...
+          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+            Loading HabitPulse...
           </span>
         </div>
       </div>
@@ -121,7 +125,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col antialiased selection:bg-emerald-500 selection:text-white">
       {/* Offline Status Toast */}
       <OfflineIndicator />
 
@@ -210,7 +214,9 @@ export default function App() {
         )}
 
         {activeTab === 'admin' && (
-          <AdminDashboard onBackToApp={() => setActiveTab('today')} />
+          <AuthGuard user={user} isAdmin={isAdmin}>
+            <AdminDashboard onBackToApp={() => setActiveTab('today')} />
+          </AuthGuard>
         )}
       </main>
 

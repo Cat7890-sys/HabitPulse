@@ -54,6 +54,7 @@ export const HabitFormModal: React.FC<Props> = ({
 }) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [note, setNote] = useState('');
   const [emoji, setEmoji] = useState('✨');
   const [color, setColor] = useState<HabitColor>('indigo');
   const [goalType, setGoalType] = useState<GoalType>('recurring');
@@ -73,6 +74,7 @@ export const HabitFormModal: React.FC<Props> = ({
     if (habitToEdit) {
       setName(habitToEdit.name);
       setDescription(habitToEdit.description || '');
+      setNote(habitToEdit.note || '');
       setEmoji(habitToEdit.emoji);
       setColor(habitToEdit.color);
       setGoalType(habitToEdit.goalType || 'recurring');
@@ -94,6 +96,7 @@ export const HabitFormModal: React.FC<Props> = ({
     } else {
       setName('');
       setDescription('');
+      setNote('');
       setEmoji('⚡');
       setColor('indigo');
       setGoalType('recurring');
@@ -149,6 +152,7 @@ export const HabitFormModal: React.FC<Props> = ({
     onSave({
       name: name.trim(),
       description: description.trim() || undefined,
+      note: note.trim() || undefined,
       emoji,
       color,
       goalType,
@@ -184,9 +188,10 @@ export const HabitFormModal: React.FC<Props> = ({
           </div>
           <button
             onClick={onClose}
+            aria-label="Close dialog"
             className="p-1.5 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
           >
-            <X className="h-5 w-5" />
+            <X className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
 
@@ -212,7 +217,7 @@ export const HabitFormModal: React.FC<Props> = ({
                         if (idea.targetTime) setTargetTime(idea.targetTime);
                         if (targetCat) setSelectedCategoryId(targetCat.id);
                       }}
-                      className="inline-flex items-center gap-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-600 transition cursor-pointer"
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 px-2.5 py-1 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:text-emerald-700 dark:hover:text-emerald-400 transition cursor-pointer"
                     >
                       <span>{idea.emoji}</span>
                       <span>{idea.name}</span>
@@ -225,7 +230,7 @@ export const HabitFormModal: React.FC<Props> = ({
 
           {/* Name & Emoji row */}
           <div>
-            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 block">
+            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">
               Habit / Task Name & Icon
             </label>
             <div className="flex gap-2.5 items-center">
@@ -235,7 +240,7 @@ export const HabitFormModal: React.FC<Props> = ({
                   value={emoji}
                   maxLength={4}
                   onChange={(e) => setEmoji(e.target.value)}
-                  className="h-10 w-12 text-center text-xl rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="h-10 w-12 text-center text-xl rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
@@ -245,14 +250,14 @@ export const HabitFormModal: React.FC<Props> = ({
                 placeholder="e.g., Morning Run, Finish Java Assignment..."
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="flex-1 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 py-2 text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="flex-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 py-2 text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
             </div>
           </div>
 
           {/* Description (Optional) */}
           <div>
-            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 block">
+            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
               Description (Optional)
             </label>
             <input
@@ -260,13 +265,27 @@ export const HabitFormModal: React.FC<Props> = ({
               placeholder="e.g. Study chapter 4 & 5 or practice 30 minutes"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+          </div>
+
+          {/* Note (Optional) */}
+          <div>
+            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
+              Note (Optional)
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. Bring water bottle, reminder notes, etc."
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
           </div>
 
           {/* Emoji Picker Presets */}
           <div>
-            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 block">
+            <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5 block">
               Select Icon
             </label>
             <div className="flex flex-wrap gap-1.5">
@@ -277,7 +296,7 @@ export const HabitFormModal: React.FC<Props> = ({
                   onClick={() => setEmoji(icon)}
                   className={`h-8 w-8 rounded-xl text-base flex items-center justify-center transition cursor-pointer ${
                     emoji === icon
-                      ? 'bg-indigo-600 text-white shadow-xs scale-105'
+                      ? 'bg-emerald-600 text-white shadow-xs scale-105'
                       : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700'
                   }`}
                 >
@@ -288,25 +307,25 @@ export const HabitFormModal: React.FC<Props> = ({
           </div>
 
           {/* Goal Type: Recurring Habit vs One-Time Task */}
-          <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-850 p-3.5 space-y-3">
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 p-3.5 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                <Target className="h-4 w-4 text-indigo-500" />
+              <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                <Target className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                 <span>Goal & Deadline Configuration</span>
               </span>
-              <span className="text-[10px] font-bold text-slate-400">
+              <span className="text-[10px] font-medium text-slate-400">
                 Optional Deadlines
               </span>
             </div>
 
             {/* Goal Type Tabs */}
-            <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-slate-200/60 dark:bg-slate-800 text-xs font-bold">
+            <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-slate-200/60 dark:bg-slate-800 text-xs font-semibold">
               <button
                 type="button"
                 onClick={() => setGoalType('recurring')}
                 className={`py-1.5 rounded-lg transition cursor-pointer ${
                   goalType === 'recurring'
-                    ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs'
+                    ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs'
                     : 'text-slate-600 dark:text-slate-400'
                 }`}
               >
@@ -317,7 +336,7 @@ export const HabitFormModal: React.FC<Props> = ({
                 onClick={() => setGoalType('one_time')}
                 className={`py-1.5 rounded-lg transition cursor-pointer ${
                   goalType === 'one_time'
-                    ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs'
+                    ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs'
                     : 'text-slate-600 dark:text-slate-400'
                 }`}
               >
@@ -328,26 +347,26 @@ export const HabitFormModal: React.FC<Props> = ({
             {/* Deadline inputs */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
               <div>
-                <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">
+                <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">
                   Target Deadline Date
                 </label>
                 <input
                   type="date"
                   value={targetDate}
                   onChange={(e) => setTargetDate(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
               <div>
-                <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">
+                <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">
                   Target Time (Optional)
                 </label>
                 <input
                   type="time"
                   value={targetTime}
                   onChange={(e) => setTargetTime(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
             </div>
@@ -355,7 +374,7 @@ export const HabitFormModal: React.FC<Props> = ({
             {/* Target completions (e.g. Complete 10 times by deadline) */}
             {goalType === 'recurring' && (
               <div>
-                <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">
+                <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">
                   Target Total Completions (Optional)
                 </label>
                 <input
@@ -365,7 +384,7 @@ export const HabitFormModal: React.FC<Props> = ({
                   placeholder="e.g. 14 sessions or 30 days"
                   value={targetCompletions}
                   onChange={(e) => setTargetCompletions(e.target.value === '' ? '' : parseInt(e.target.value))}
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
             )}
@@ -375,7 +394,7 @@ export const HabitFormModal: React.FC<Props> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* Color Accent */}
             <div>
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 block">
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 block">
                 Color Accent
               </label>
               <div className="flex flex-wrap gap-1.5">
@@ -387,7 +406,7 @@ export const HabitFormModal: React.FC<Props> = ({
                       key={c}
                       onClick={() => setColor(c)}
                       className={`h-7 w-7 rounded-xl transition cursor-pointer flex items-center justify-center ${scheme.bg} ${
-                        color === c ? 'ring-2 ring-indigo-500 ring-offset-2 dark:ring-offset-slate-900 scale-110' : ''
+                        color === c ? 'ring-2 ring-emerald-500 ring-offset-2 dark:ring-offset-slate-900 scale-110' : ''
                       }`}
                       title={scheme.label}
                     >
@@ -401,14 +420,14 @@ export const HabitFormModal: React.FC<Props> = ({
             {/* Category Selector */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                   Category
                 </label>
                 {onOpenCategoryManager && (
                   <button
                     type="button"
                     onClick={onOpenCategoryManager}
-                    className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+                    className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
                   >
                     Manage
                   </button>
@@ -417,7 +436,7 @@ export const HabitFormModal: React.FC<Props> = ({
               <select
                 value={selectedCategoryId}
                 onChange={(e) => setSelectedCategoryId(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
               >
                 {categories.map((cat) => (
                   <option key={cat.id} value={cat.id}>
@@ -430,18 +449,18 @@ export const HabitFormModal: React.FC<Props> = ({
 
           {/* Frequency Section (for recurring habits) */}
           {goalType === 'recurring' && (
-            <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 p-3.5 space-y-3">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">
+            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 p-3.5 space-y-3">
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
                 Repeat Schedule
               </label>
 
-              <div className="grid grid-cols-3 gap-2 p-1 rounded-xl bg-slate-200/60 dark:bg-slate-800 text-xs font-bold">
+              <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-slate-200/60 dark:bg-slate-800 text-xs font-semibold">
                 <button
                   type="button"
                   onClick={() => setFreqType('daily')}
                   className={`py-1.5 rounded-lg transition cursor-pointer ${
                     freqType === 'daily'
-                      ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs'
+                      ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs'
                       : 'text-slate-600 dark:text-slate-400'
                   }`}
                 >
@@ -452,7 +471,7 @@ export const HabitFormModal: React.FC<Props> = ({
                   onClick={() => setFreqType('weekdays')}
                   className={`py-1.5 rounded-lg transition cursor-pointer ${
                     freqType === 'weekdays'
-                      ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs'
+                      ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs'
                       : 'text-slate-600 dark:text-slate-400'
                   }`}
                 >
@@ -463,7 +482,7 @@ export const HabitFormModal: React.FC<Props> = ({
                   onClick={() => setFreqType('times_per_week')}
                   className={`py-1.5 rounded-lg transition cursor-pointer ${
                     freqType === 'times_per_week'
-                      ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs'
+                      ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs'
                       : 'text-slate-600 dark:text-slate-400'
                   }`}
                 >
@@ -482,9 +501,9 @@ export const HabitFormModal: React.FC<Props> = ({
                           type="button"
                           key={dayName}
                           onClick={() => handleToggleDay(idx)}
-                          className={`h-9 flex-1 rounded-xl text-xs font-bold transition cursor-pointer ${
+                          className={`h-9 flex-1 rounded-xl text-xs font-semibold transition cursor-pointer ${
                             isSelected
-                              ? 'bg-indigo-600 text-white shadow-xs'
+                              ? 'bg-emerald-600 text-white shadow-xs'
                               : 'bg-slate-200/70 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
                           }`}
                         >
@@ -508,9 +527,9 @@ export const HabitFormModal: React.FC<Props> = ({
                         type="button"
                         key={num}
                         onClick={() => setTimesPerWeek(num)}
-                        className={`h-8 w-8 rounded-xl text-xs font-bold transition cursor-pointer ${
+                        className={`h-8 w-8 rounded-xl text-xs font-semibold transition cursor-pointer ${
                           timesPerWeek === num
-                            ? 'bg-indigo-600 text-white shadow-xs'
+                            ? 'bg-emerald-600 text-white shadow-xs'
                             : 'bg-slate-200/80 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300'
                         }`}
                       >
@@ -524,12 +543,12 @@ export const HabitFormModal: React.FC<Props> = ({
           )}
 
           {/* Reminder Section */}
-          <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 p-3.5 space-y-3">
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 p-3.5 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Bell className="h-4 w-4 text-indigo-500" />
+                <Bell className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                 <div>
-                  <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                  <h4 className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                     Reminder Notification
                   </h4>
                   <p className="text-[11px] text-slate-400">
@@ -541,11 +560,11 @@ export const HabitFormModal: React.FC<Props> = ({
                 type="button"
                 onClick={handleToggleReminder}
                 className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  reminderEnabled ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-700'
+                  reminderEnabled ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-700'
                 }`}
               >
                 <span
-                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out ${
                     reminderEnabled ? 'translate-x-5' : 'translate-x-0'
                   }`}
                 />
@@ -562,7 +581,7 @@ export const HabitFormModal: React.FC<Props> = ({
                   type="time"
                   value={reminderTime}
                   onChange={(e) => setReminderTime(e.target.value)}
-                  className="ml-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="ml-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
             )}
@@ -570,11 +589,11 @@ export const HabitFormModal: React.FC<Props> = ({
 
           {/* Archive Status Toggle (when editing an existing habit) */}
           {habitToEdit && (
-            <div className="rounded-2xl border border-amber-200/80 dark:border-amber-900/40 bg-amber-50/50 dark:bg-amber-950/20 p-3.5 flex items-center justify-between">
+            <div className="rounded-xl border border-amber-200 dark:border-amber-900/40 bg-amber-50/50 dark:bg-amber-950/20 p-3.5 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Archive className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
                 <div>
-                  <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                  <h4 className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                     Archive Habit
                   </h4>
                   <p className="text-[10px] text-slate-500 dark:text-slate-400">
@@ -590,7 +609,7 @@ export const HabitFormModal: React.FC<Props> = ({
                 }`}
               >
                 <span
-                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out ${
                     archived ? 'translate-x-5' : 'translate-x-0'
                   }`}
                 />
@@ -603,13 +622,13 @@ export const HabitFormModal: React.FC<Props> = ({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-2xl bg-slate-100 dark:bg-slate-800 py-3 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer"
+              className="flex-1 rounded-xl bg-slate-100 dark:bg-slate-800 py-2.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex-1 rounded-2xl bg-indigo-600 py-3 text-xs font-bold text-white shadow-lg shadow-indigo-600/30 hover:bg-indigo-700 active:scale-[0.98] transition cursor-pointer"
+              className="flex-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 py-2.5 text-xs font-semibold text-white shadow-xs active:scale-[0.98] transition cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500"
             >
               {habitToEdit ? 'Save Changes' : 'Create Habit'}
             </button>

@@ -33,6 +33,7 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [agreedToPolicies, setAgreedToPolicies] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -76,6 +77,11 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
     if (password.length < 6) {
       setErrorMessage('Password must be at least 6 characters.');
+      return;
+    }
+
+    if (tab === 'signup' && !agreedToPolicies) {
+      setErrorMessage('Please acknowledge the Terms of Use and Privacy Notice before registering.');
       return;
     }
 
@@ -127,12 +133,12 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose }) => {
       <div className="relative w-full max-w-sm rounded-3xl bg-white dark:bg-slate-900 p-6 shadow-2xl border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-          <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-md shadow-indigo-600/30">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-600 text-white">
               <ShieldCheck className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="text-sm font-black text-slate-900 dark:text-white">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
                 HabitPulse Cloud Sync
               </h3>
               <p className="text-[11px] text-slate-400">
@@ -143,24 +149,25 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+            aria-label="Close dialog"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
           >
-            <X className="h-4 w-4" />
+            <X className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
 
         {/* User is already signed in */}
         {user ? (
           <div className="mt-5 space-y-4">
-            <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-indigo-50/50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/50">
+            <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
               {user.photoURL ? (
                 <img
                   src={user.photoURL}
                   alt={user.displayName || 'User'}
-                  className="h-10 w-10 rounded-xl object-cover border border-indigo-200 dark:border-indigo-800"
+                  className="h-10 w-10 rounded-xl object-cover border border-slate-200 dark:border-slate-700"
                 />
               ) : (
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white font-black text-sm">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-white font-black text-sm">
                   {(user.email?.[0] || 'U').toUpperCase()}
                 </div>
               )}
@@ -180,7 +187,7 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose }) => {
             </div>
 
             {successMessage && (
-              <div className="flex items-center gap-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 p-2.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+              <div className="flex items-center gap-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 p-2.5 text-xs font-medium text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                 <CheckCircle2 className="h-4 w-4 shrink-0" />
                 <span>{successMessage}</span>
               </div>
@@ -191,7 +198,7 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 type="button"
                 onClick={handleSyncNow}
                 disabled={isSyncing}
-                className="w-full flex items-center justify-center gap-2 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 text-xs font-bold shadow-md shadow-indigo-600/30 transition cursor-pointer"
+                className="w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 text-xs font-semibold transition cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500"
               >
                 <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
                 <span>{isSyncing ? 'Syncing...' : 'Sync Cloud Now'}</span>
@@ -200,7 +207,7 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose }) => {
               <button
                 type="button"
                 onClick={handleSignOut}
-                className="w-full flex items-center justify-center gap-2 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/50 hover:text-rose-600 dark:hover:text-rose-400 text-slate-600 dark:text-slate-300 py-2.5 text-xs font-bold border border-slate-200 dark:border-slate-700 transition cursor-pointer"
+                className="w-full flex items-center justify-center gap-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/50 hover:text-rose-600 dark:hover:text-rose-400 text-slate-600 dark:text-slate-300 py-2.5 text-xs font-semibold border border-slate-200 dark:border-slate-700 transition cursor-pointer"
               >
                 <LogOut className="h-4 w-4" />
                 <span>Sign Out</span>
@@ -215,7 +222,7 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose }) => {
               type="button"
               onClick={handleGoogleSignIn}
               disabled={isSubmitting}
-              className="w-full flex items-center justify-center gap-2.5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-100 py-2.5 px-4 text-xs font-bold shadow-xs transition active:scale-[0.98] cursor-pointer"
+              className="w-full flex items-center justify-center gap-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-100 py-2.5 px-4 text-xs font-semibold shadow-xs transition active:scale-[0.98] cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500"
             >
               <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24">
                 <path
@@ -240,22 +247,22 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
             <div className="relative flex items-center justify-center">
               <div className="border-t border-slate-200 dark:border-slate-800 w-full" />
-              <span className="bg-white dark:bg-slate-900 px-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <span className="bg-white dark:bg-slate-900 px-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                 Or with Email
               </span>
             </div>
 
             {/* Tab Switcher */}
-            <div className="grid grid-cols-2 gap-1 rounded-2xl bg-slate-100 dark:bg-slate-800/70 p-1">
+            <div className="grid grid-cols-2 gap-1 rounded-xl bg-slate-100 dark:bg-slate-800/70 p-1">
               <button
                 type="button"
                 onClick={() => {
                   setTab('signin');
                   setErrorMessage(null);
                 }}
-                className={`flex items-center justify-center gap-1.5 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer ${
+                className={`flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold rounded-lg transition cursor-pointer ${
                   tab === 'signin'
-                    ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs'
+                    ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs'
                     : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
                 }`}
               >
@@ -269,9 +276,9 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose }) => {
                   setTab('signup');
                   setErrorMessage(null);
                 }}
-                className={`flex items-center justify-center gap-1.5 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer ${
+                className={`flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold rounded-lg transition cursor-pointer ${
                   tab === 'signup'
-                    ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs'
+                    ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs'
                     : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
                 }`}
               >
@@ -297,7 +304,7 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose }) => {
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-3">
               <div>
-                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
                   Email Address
                 </label>
                 <div className="relative">
@@ -308,13 +315,13 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose }) => {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
                     required
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 pl-9 pr-3 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-indigo-500 focus:outline-hidden"
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 pl-9 pr-3 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-hidden"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
                   Password
                 </label>
                 <div className="relative">
@@ -325,26 +332,43 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose }) => {
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
                     required
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 pl-9 pr-3 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-indigo-500 focus:outline-hidden"
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 pl-9 pr-3 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-hidden"
                   />
                 </div>
               </div>
 
               {tab === 'signup' && (
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
-                    Confirm Password
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                      Confirm Password
+                    </label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                      <input
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="••••••••"
+                        required
+                        className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 pl-9 pr-3 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-hidden"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Consent Acknowledgement Checkbox */}
+                  <div className="flex items-start gap-2.5 pt-1">
                     <input
-                      type="password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="••••••••"
+                      type="checkbox"
+                      id="policy-consent"
+                      checked={agreedToPolicies}
+                      onChange={(e) => setAgreedToPolicies(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 accent-emerald-600 cursor-pointer"
                       required
-                      className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 pl-9 pr-3 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-indigo-500 focus:outline-hidden"
                     />
+                    <label htmlFor="policy-consent" className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed cursor-pointer select-none">
+                      I acknowledge the <a href="./terms.html" target="_blank" rel="noopener noreferrer" className="text-emerald-600 dark:text-emerald-400 underline hover:opacity-80">Terms of Use</a> and <a href="./privacy.html" target="_blank" rel="noopener noreferrer" className="text-emerald-600 dark:text-emerald-400 underline hover:opacity-80">Privacy Notice</a>.
+                    </label>
                   </div>
                 </div>
               )}
@@ -352,9 +376,9 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose }) => {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full flex items-center justify-center gap-2 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 text-xs font-bold shadow-md shadow-indigo-600/30 transition cursor-pointer mt-2"
+                className="w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 text-xs font-semibold shadow-xs transition cursor-pointer mt-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500"
               >
-                <Sparkles className="h-4 w-4" />
+                {tab === 'signin' ? <LogIn className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
                 <span>
                   {isSubmitting
                     ? 'Processing...'

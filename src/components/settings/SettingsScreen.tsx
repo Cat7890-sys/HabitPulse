@@ -237,20 +237,20 @@ export const SettingsScreen: React.FC<Props> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
         {/* Left Column */}
         <div className="space-y-5">
-          {/* Cloud Account & Supabase Sync Section */}
-          <div className="rounded-3xl border border-slate-200/90 dark:border-slate-800/90 bg-white dark:bg-slate-900 p-5 shadow-sm space-y-4">
+          {/* Cloud Account & Firebase Sync Section */}
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
                   <ShieldCheck className="h-5 w-5" />
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <span>Supabase Cloud Sync</span>
+                    <span>Firebase Cloud Sync</span>
                     <SyncStatusBadge showText={false} />
                   </h3>
                   <p className="text-[11px] text-slate-400">
-                    {user ? `Signed in as ${user.email}` : 'Local-First • Sign in to backup data to cloud'}
+                    {user ? `Signed in as ${user.email}` : 'Local-first • Sign in to backup data to cloud'}
                   </p>
                 </div>
               </div>
@@ -258,7 +258,7 @@ export const SettingsScreen: React.FC<Props> = ({
               {user ? (
                 <button
                   onClick={() => signOut()}
-                  className="flex items-center gap-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-700 dark:text-slate-200 hover:text-rose-600 px-3 py-1.5 text-xs font-bold transition cursor-pointer"
+                  className="flex items-center gap-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-700 dark:text-slate-200 hover:text-rose-600 px-3 py-1.5 text-xs font-semibold transition cursor-pointer"
                 >
                   <LogOut className="h-3.5 w-3.5" />
                   <span>Sign Out</span>
@@ -267,7 +267,7 @@ export const SettingsScreen: React.FC<Props> = ({
                 onOpenAuthModal && (
                   <button
                     onClick={onOpenAuthModal}
-                    className="flex items-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 text-xs font-bold shadow-xs transition cursor-pointer"
+                    className="flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 text-xs font-semibold shadow-xs transition cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500"
                   >
                     <LogIn className="h-3.5 w-3.5" />
                     <span>Sign In / Up</span>
@@ -281,7 +281,7 @@ export const SettingsScreen: React.FC<Props> = ({
                 <SyncStatusBadge showText={true} />
                 <button
                   onClick={triggerManualSync}
-                  className="flex items-center gap-1 text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50 px-3 py-1.5 rounded-xl hover:bg-indigo-100 transition cursor-pointer"
+                  className="flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-3 py-1.5 rounded-xl hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition cursor-pointer"
                 >
                   <RefreshCw className="h-3.5 w-3.5" />
                   <span>Sync Now</span>
@@ -292,17 +292,17 @@ export const SettingsScreen: React.FC<Props> = ({
 
           {/* Profile Persona Banner */}
           {profile && onOpenProfile && (
-            <div className="rounded-3xl border border-slate-200/90 dark:border-slate-800/90 bg-white dark:bg-slate-900 p-5 shadow-sm space-y-3">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 text-2xl border border-indigo-100 dark:border-indigo-900">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800 text-2xl border border-slate-200 dark:border-slate-700">
                     <span>{profile.avatar || '🦁'}</span>
                   </div>
                   <div>
-                    <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
                       <span>{profile.name}</span>
                     </h3>
-                    <p className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
+                    <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
                       {profile.title}
                     </p>
                   </div>
@@ -310,7 +310,7 @@ export const SettingsScreen: React.FC<Props> = ({
 
                 <button
                   onClick={onOpenProfile}
-                  className="flex items-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 text-xs font-bold shadow-xs transition cursor-pointer"
+                  className="flex items-center gap-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-3 py-1.5 text-xs font-semibold transition cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500"
                 >
                   <User className="h-3.5 w-3.5" />
                   <span>Edit Profile</span>
@@ -411,12 +411,12 @@ export const SettingsScreen: React.FC<Props> = ({
             </div>
 
             {/* Theme mode buttons */}
-            <div className="grid grid-cols-3 gap-2 rounded-2xl bg-slate-100 dark:bg-slate-800/70 p-1">
+            <div className="grid grid-cols-3 gap-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/70 p-1">
               <button
                 onClick={() => handleThemeChange('light')}
-                className={`flex items-center justify-center gap-2 py-2 text-xs font-bold rounded-xl transition cursor-pointer ${
+                className={`flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-lg transition cursor-pointer ${
                   settings.theme === 'light'
-                    ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs'
+                    ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs'
                     : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
                 }`}
               >
@@ -426,9 +426,9 @@ export const SettingsScreen: React.FC<Props> = ({
 
               <button
                 onClick={() => handleThemeChange('dark')}
-                className={`flex items-center justify-center gap-2 py-2 text-xs font-bold rounded-xl transition cursor-pointer ${
+                className={`flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-lg transition cursor-pointer ${
                   settings.theme === 'dark'
-                    ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs'
+                    ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs'
                     : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
                 }`}
               >
@@ -438,9 +438,9 @@ export const SettingsScreen: React.FC<Props> = ({
 
               <button
                 onClick={() => handleThemeChange('system')}
-                className={`flex items-center justify-center gap-2 py-2 text-xs font-bold rounded-xl transition cursor-pointer ${
+                className={`flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-lg transition cursor-pointer ${
                   settings.theme === 'system'
-                    ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs'
+                    ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs'
                     : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
                 }`}
               >
@@ -451,7 +451,7 @@ export const SettingsScreen: React.FC<Props> = ({
 
             {/* Accent color picker */}
             <div className="pt-2 space-y-2">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+              <label className="text-xs font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                 <Palette className="h-3.5 w-3.5 text-slate-400" />
                 <span>Accent Highlight</span>
               </label>
@@ -468,7 +468,7 @@ export const SettingsScreen: React.FC<Props> = ({
                         scheme.bg
                       } ${
                         isSelected
-                          ? 'ring-2 ring-offset-2 ring-indigo-500 dark:ring-offset-slate-900 scale-105 shadow-md'
+                          ? 'ring-2 ring-offset-2 ring-emerald-500 dark:ring-offset-slate-900 scale-105 shadow-xs'
                           : 'opacity-80 hover:opacity-100 hover:scale-102'
                       }`}
                       title={scheme.label}
@@ -482,7 +482,7 @@ export const SettingsScreen: React.FC<Props> = ({
           </div>
 
           {/* Reminders & Push Notifications */}
-          <div className="rounded-3xl border border-slate-200/90 dark:border-slate-800/90 bg-white dark:bg-slate-900 p-5 shadow-sm space-y-4">
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-4">
             <div>
               <h3 className="text-sm font-bold text-slate-900 dark:text-white">
                 Reminders & Notifications API
@@ -496,7 +496,7 @@ export const SettingsScreen: React.FC<Props> = ({
               <div className="flex items-center gap-2">
                 <Bell className="h-4 w-4 text-slate-400" />
                 <div>
-                  <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                  <h4 className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                     Scheduled Habit Notifications
                   </h4>
                   <p className="text-[10px] text-slate-400">
@@ -509,11 +509,11 @@ export const SettingsScreen: React.FC<Props> = ({
                 onClick={handleToggleNotifications}
                 aria-label="Toggle notifications"
                 className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  settings.notificationsEnabled ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-700'
+                  settings.notificationsEnabled ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-700'
                 }`}
               >
                 <span
-                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out ${
                     settings.notificationsEnabled ? 'translate-x-5' : 'translate-x-0'
                   }`}
                 />
@@ -525,11 +525,11 @@ export const SettingsScreen: React.FC<Props> = ({
               <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                    Active Habits with Reminders: <strong className="text-indigo-600 dark:text-indigo-400">{habitsWithReminders.length}</strong>
+                    Active Habits with Reminders: <strong className="text-emerald-600 dark:text-emerald-400">{habitsWithReminders.length}</strong>
                   </span>
                   <button
                     onClick={handleTestNotification}
-                    className="text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50 px-3 py-1.5 rounded-xl hover:bg-indigo-100 dark:hover:bg-indigo-900 transition cursor-pointer"
+                    className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-3 py-1.5 rounded-xl hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition cursor-pointer"
                   >
                     Test Alert 🔔
                   </button>
@@ -597,11 +597,11 @@ export const SettingsScreen: React.FC<Props> = ({
                   }}
                   aria-label="Toggle sound effects"
                   className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                    settings.soundEnabled ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-700'
+                    settings.soundEnabled ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-700'
                   }`}
                 >
                   <span
-                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out ${
                       settings.soundEnabled ? 'translate-x-5' : 'translate-x-0'
                     }`}
                   />
@@ -623,11 +623,11 @@ export const SettingsScreen: React.FC<Props> = ({
                   }}
                   aria-label="Toggle haptic vibration"
                   className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                    settings.hapticsEnabled ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-700'
+                    settings.hapticsEnabled ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-700'
                   }`}
                 >
                   <span
-                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out ${
                       settings.hapticsEnabled ? 'translate-x-5' : 'translate-x-0'
                     }`}
                   />
@@ -637,7 +637,7 @@ export const SettingsScreen: React.FC<Props> = ({
           </div>
 
           {/* JSON Data Export & Backup */}
-          <div className="rounded-3xl border border-slate-200/90 dark:border-slate-800/90 bg-white dark:bg-slate-900 p-5 shadow-sm space-y-4">
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-4">
             <div className="flex items-start justify-between">
               <div>
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white">
@@ -650,50 +650,50 @@ export const SettingsScreen: React.FC<Props> = ({
 
               <button
                 onClick={() => setIsDataModalOpen(true)}
-                className="flex items-center gap-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 px-3 py-1.5 text-xs font-bold hover:bg-indigo-100 dark:hover:bg-indigo-900 transition cursor-pointer"
+                className="flex items-center gap-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-3 py-1.5 text-xs font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer"
               >
-                <FileJson className="h-3.5 w-3.5" />
+                <FileJson className="h-3.5 w-3.5 text-slate-500" />
                 <span>Advanced</span>
               </button>
             </div>
 
-            <div className="rounded-2xl bg-slate-50 dark:bg-slate-800/40 p-3.5 border border-slate-100 dark:border-slate-800">
+            <div className="rounded-xl bg-slate-50 dark:bg-slate-800/40 p-3.5 border border-slate-100 dark:border-slate-800">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                   Backup Contents
                 </span>
-                <span className="text-[10px] font-mono font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded-md">
+                <span className="text-[10px] font-mono font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md">
                   .json format
                 </span>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
                 <div className="rounded-xl bg-white dark:bg-slate-900 p-2 border border-slate-200/60 dark:border-slate-800">
-                  <span className="font-extrabold text-indigo-600 dark:text-indigo-400 text-sm block">
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400 text-sm block">
                     {habits.length}
                   </span>
                   <span className="text-[10px] text-slate-400 font-medium">Habits & Goals</span>
                 </div>
 
                 <div className="rounded-xl bg-white dark:bg-slate-900 p-2 border border-slate-200/60 dark:border-slate-800">
-                  <span className="font-extrabold text-purple-600 dark:text-purple-400 text-sm block">
+                  <span className="font-bold text-slate-800 dark:text-slate-200 text-sm block">
                     {categories.length}
                   </span>
                   <span className="text-[10px] text-slate-400 font-medium">Categories</span>
                 </div>
 
                 <div className="rounded-xl bg-white dark:bg-slate-900 p-2 border border-slate-200/60 dark:border-slate-800">
-                  <span className="font-extrabold text-amber-500 text-sm block">
+                  <span className="font-bold text-amber-500 text-sm block">
                     ✓
                   </span>
-                  <span className="text-[10px] text-slate-400 font-medium">Tokens & Milestones</span>
+                  <span className="text-[10px] text-slate-400 font-medium">Tokens</span>
                 </div>
 
                 <div className="rounded-xl bg-white dark:bg-slate-900 p-2 border border-slate-200/60 dark:border-slate-800">
-                  <span className="font-extrabold text-emerald-600 dark:text-emerald-400 text-sm block">
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400 text-sm block">
                     {profile?.name ? '1' : '0'}
                   </span>
-                  <span className="text-[10px] text-slate-400 font-medium font-mono">Profile & Logs</span>
+                  <span className="text-[10px] text-slate-400 font-medium">Profile</span>
                 </div>
               </div>
             </div>
@@ -702,7 +702,7 @@ export const SettingsScreen: React.FC<Props> = ({
               <button
                 onClick={handleExportData}
                 disabled={isExporting}
-                className="w-full flex items-center justify-center gap-2 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white py-3 text-xs font-bold shadow-md shadow-indigo-600/30 transition cursor-pointer"
+                className="w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 text-xs font-semibold shadow-xs transition cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500"
               >
                 <Download className="h-4 w-4" />
                 <span>{isExporting ? 'Preparing JSON...' : 'Download JSON Backup File'}</span>
@@ -711,17 +711,17 @@ export const SettingsScreen: React.FC<Props> = ({
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center justify-center gap-2 rounded-2xl bg-slate-100 dark:bg-slate-800 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer"
+                  className="flex items-center justify-center gap-2 rounded-xl bg-slate-100 dark:bg-slate-800 py-2.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer"
                 >
-                  <Upload className="h-3.5 w-3.5 text-emerald-500" />
+                  <Upload className="h-3.5 w-3.5 text-emerald-600" />
                   <span>Import JSON</span>
                 </button>
 
                 <button
                   onClick={() => setIsDataModalOpen(true)}
-                  className="flex items-center justify-center gap-2 rounded-2xl bg-slate-100 dark:bg-slate-800 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer"
+                  className="flex items-center justify-center gap-2 rounded-xl bg-slate-100 dark:bg-slate-800 py-2.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer"
                 >
-                  <FileJson className="h-3.5 w-3.5 text-purple-500" />
+                  <FileJson className="h-3.5 w-3.5 text-slate-500" />
                   <span>Copy JSON</span>
                 </button>
               </div>
@@ -737,7 +737,7 @@ export const SettingsScreen: React.FC<Props> = ({
 
             <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
               <div>
-                <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                <h4 className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                   Demo Starter Data
                 </h4>
                 <p className="text-[11px] text-slate-400">
@@ -746,16 +746,16 @@ export const SettingsScreen: React.FC<Props> = ({
               </div>
               <button
                 onClick={handleSeedData}
-                className="flex items-center gap-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 px-3 py-1.5 text-xs font-bold hover:bg-indigo-100 dark:hover:bg-indigo-900 transition cursor-pointer"
+                className="flex items-center gap-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-3 py-1.5 text-xs font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer"
               >
-                <Sparkles className="h-3.5 w-3.5" />
+                <RefreshCw className="h-3.5 w-3.5 text-emerald-600" />
                 <span>Load Demo</span>
               </button>
             </div>
 
             <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
               <div>
-                <h4 className="text-xs font-bold text-rose-600 dark:text-rose-400">
+                <h4 className="text-xs font-semibold text-rose-600 dark:text-rose-400">
                   Clear All Data
                 </h4>
                 <p className="text-[11px] text-slate-400">
@@ -764,13 +764,58 @@ export const SettingsScreen: React.FC<Props> = ({
               </div>
               <button
                 onClick={() => setShowResetConfirm(true)}
-                className="flex items-center gap-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 px-3 py-1.5 text-xs font-bold hover:bg-rose-100 dark:hover:bg-rose-900 transition cursor-pointer"
+                className="flex items-center gap-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 px-3 py-1.5 text-xs font-semibold hover:bg-rose-100 dark:hover:bg-rose-900/60 transition cursor-pointer"
               >
                 <Trash2 className="h-3.5 w-3.5" />
                 <span>Reset All</span>
               </button>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Legal & Policies Card */}
+      <div className="rounded-2xl bg-white dark:bg-slate-900 p-5 shadow-xs border border-slate-200 dark:border-slate-800 space-y-3">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+          Legal & Compliance
+        </h3>
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <a
+            href="./privacy.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-slate-700 dark:text-slate-300 hover:text-emerald-700 dark:hover:text-emerald-400 font-medium transition"
+          >
+            <span>Privacy Notice</span>
+            <span className="text-[10px] text-slate-400">↗</span>
+          </a>
+          <a
+            href="./terms.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-slate-700 dark:text-slate-300 hover:text-emerald-700 dark:hover:text-emerald-400 font-medium transition"
+          >
+            <span>Terms of Use</span>
+            <span className="text-[10px] text-slate-400">↗</span>
+          </a>
+          <a
+            href="./cookies.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-slate-700 dark:text-slate-300 hover:text-emerald-700 dark:hover:text-emerald-400 font-medium transition"
+          >
+            <span>Cookie Policy</span>
+            <span className="text-[10px] text-slate-400">↗</span>
+          </a>
+          <a
+            href="./refunds.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-slate-700 dark:text-slate-300 hover:text-emerald-700 dark:hover:text-emerald-400 font-medium transition"
+          >
+            <span>Refund Policy</span>
+            <span className="text-[10px] text-slate-400">↗</span>
+          </a>
         </div>
       </div>
 

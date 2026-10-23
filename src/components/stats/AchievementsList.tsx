@@ -88,27 +88,27 @@ export const AchievementsList: React.FC<Props> = ({
             <Trophy className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
               <span>Milestones & Achievements</span>
-              <span className="inline-flex items-center rounded-full bg-amber-100 dark:bg-amber-950 px-2 py-0.5 text-[10px] font-extrabold text-amber-800 dark:text-amber-300">
+              <span className="inline-flex items-center rounded-full bg-amber-100 dark:bg-amber-950 px-2 py-0.5 text-[10px] font-semibold text-amber-800 dark:text-amber-300">
                 {unlockedCount}/{achievements.length}
               </span>
             </h3>
             <p className="text-[11px] text-slate-400">
-              Unlock badges as you build life-changing habits
+              Unlock badges as you build consistency
             </p>
           </div>
         </div>
 
         {/* Unlocked Progress Pill */}
         <div className="text-right shrink-0">
-          <span className="text-xs font-black text-amber-600 dark:text-amber-400">
+          <span className="text-xs font-bold text-amber-600 dark:text-amber-400">
             {percentageUnlocked}% Unlocked
           </span>
           <div className="w-16 h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 mt-1 overflow-hidden">
             <div
               style={{ width: `${percentageUnlocked}%` }}
-              className="h-full bg-gradient-to-r from-amber-500 to-amber-400 rounded-full transition-all duration-500"
+              className="h-full bg-amber-500 rounded-full transition-all duration-300"
             />
           </div>
         </div>
@@ -119,7 +119,7 @@ export const AchievementsList: React.FC<Props> = ({
         <div className="flex gap-1.5">
           <button
             onClick={() => setSelectedFilter('all')}
-            className={`px-3 py-1 rounded-full text-xs font-bold transition cursor-pointer ${
+            className={`px-3 py-1 rounded-xl text-xs font-semibold transition cursor-pointer ${
               selectedFilter === 'all'
                 ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-xs'
                 : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
@@ -129,13 +129,13 @@ export const AchievementsList: React.FC<Props> = ({
           </button>
           <button
             onClick={() => setSelectedFilter('unlocked')}
-            className={`px-3 py-1 rounded-full text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
+            className={`px-3 py-1 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center gap-1 ${
               selectedFilter === 'unlocked'
                 ? 'bg-amber-500 text-white shadow-xs'
                 : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
             }`}
           >
-            <Sparkles className="h-3 w-3" />
+            <CheckCircle2 className="h-3 w-3" />
             <span>Unlocked ({unlockedCount})</span>
           </button>
           <button

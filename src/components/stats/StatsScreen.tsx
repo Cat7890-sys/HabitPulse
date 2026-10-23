@@ -92,15 +92,15 @@ export const StatsScreen: React.FC<Props> = ({
         {/* Token Rewards Wallet Card */}
         <div
           onClick={onOpenWallet}
-          className="group rounded-3xl border border-amber-200/90 dark:border-amber-900/40 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent dark:from-amber-950/30 dark:via-slate-900 dark:to-slate-900 p-4 shadow-xs transition hover:border-amber-300 dark:hover:border-amber-800 cursor-pointer"
+          className="group rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-xs transition hover:border-slate-300 dark:hover:border-slate-700 cursor-pointer"
         >
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500 text-slate-950 shadow-xs">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400">
                 <Coins className="h-4 w-4" />
               </div>
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400">
                   Token Wallet
                 </span>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -109,49 +109,49 @@ export const StatsScreen: React.FC<Props> = ({
               </div>
             </div>
 
-            <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-amber-600 group-hover:translate-x-0.5 transition" />
+            <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 group-hover:translate-x-0.5 transition" />
           </div>
 
-          <div className="mt-3 flex items-baseline justify-between">
+          <div className="mt-3.5 flex items-baseline justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
             <div>
-              <span className="text-2xl font-black text-slate-900 dark:text-white">
+              <span className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white tabular-nums">
                 {tokenBalance.toLocaleString()}
               </span>
-              <span className="text-xs font-bold text-slate-500 ml-1">tokens</span>
+              <span className="text-xs font-medium text-slate-500 ml-1.5">tokens</span>
             </div>
-            <span className="text-xs text-slate-400 font-medium">
+            <span className="text-xs text-slate-500 dark:text-slate-400 tabular-nums">
               {totalTokensEarned} lifetime earned
             </span>
           </div>
         </div>
 
         {/* Daily App Login Streak (Separate System) */}
-        <div className="rounded-3xl border border-indigo-200/90 dark:border-indigo-900/40 bg-gradient-to-br from-indigo-500/10 via-indigo-500/5 to-transparent dark:from-indigo-950/30 dark:via-slate-900 dark:to-slate-900 p-4 shadow-xs">
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-xs">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-xs">
-                <Zap className="h-4 w-4 fill-white/20" />
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400">
+                <Zap className="h-4 w-4" />
               </div>
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-400">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
                   Daily App Login Streak
                 </span>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Consistency in opening HabitPulse
+                  HabitPulse consistency
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="mt-3 flex items-baseline justify-between">
+          <div className="mt-3.5 flex items-baseline justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
             <div>
-              <span className="text-2xl font-black text-slate-900 dark:text-white">
+              <span className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white tabular-nums">
                 {loginStreak.currentStreak}
               </span>
-              <span className="text-xs font-bold text-slate-500 ml-1">consecutive days</span>
+              <span className="text-xs font-medium text-slate-500 ml-1.5">consecutive days</span>
             </div>
-            <span className="text-xs text-slate-400 font-medium">
-              Personal Best: {loginStreak.longestStreak} days
+            <span className="text-xs text-slate-500 dark:text-slate-400 tabular-nums">
+              Best: {loginStreak.longestStreak} days
             </span>
           </div>
         </div>
@@ -201,7 +201,7 @@ export const StatsScreen: React.FC<Props> = ({
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
               Average Rate
             </span>
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
               <Target className="h-4 w-4" />
             </div>
           </div>
@@ -219,7 +219,7 @@ export const StatsScreen: React.FC<Props> = ({
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
               Active Habits
             </span>
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
               <Award className="h-4 w-4" />
             </div>
           </div>
@@ -308,7 +308,7 @@ export const StatsScreen: React.FC<Props> = ({
                     </div>
 
                     <div className="text-right pl-2 border-l border-slate-200 dark:border-slate-700">
-                      <span className="text-xs font-extrabold text-indigo-600 dark:text-indigo-400">
+                      <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
                         {completionRate}%
                       </span>
                       <span className="text-[9px] text-slate-400 font-medium block">

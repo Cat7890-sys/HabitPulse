@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cookie and Browser Storage Policy - HabitPulse</title>
+  <meta name="description" content="Cookie and Browser Storage Policy for HabitPulse distinguishing cookies from IndexedDB and local storage." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased min-h-screen flex flex-col font-sans">
+  <header class="border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur sticky top-0 z-10">
+    <div class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+      <a href="./index.html" class="flex items-center gap-2 font-bold text-indigo-600 dark:text-indigo-400 hover:opacity-80 transition">
+        <span>← Back to HabitPulse</span>
+      </a>
+      <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400">Storage Policy</span>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-4xl mx-auto px-4 py-10 w-full space-y-8">
+    <div class="space-y-3">
+      <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">Cookie and Browser Storage Policy</h1>
+      <p class="text-sm text-slate-500 dark:text-slate-400">Last updated: October 2026</p>
+    </div>
+
+    <section class="space-y-4 text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+      <h2 class="text-lg font-bold text-slate-900 dark:text-white pt-2">1. Overview</h2>
+      <p>
+        This Cookie and Browser Storage Policy explains how <strong>HabitPulse</strong> utilizes browser storage technologies, including cookies, IndexedDB, and local storage.
+      </p>
+      <div class="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 text-amber-800 dark:text-amber-300 text-xs font-medium">
+        <strong>Operator Contact:</strong> [TODO: Operator Name / Contact Email pending formal entity registration].
+      </div>
+    </section>
+
+    <section class="space-y-4 text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+      <h2 class="text-lg font-bold text-slate-900 dark:text-white pt-2">2. Cookies vs. IndexedDB & Local Storage</h2>
+      <p>
+        It is important to distinguish traditional HTTP cookies from modern browser client-side storage technologies used by HabitPulse:
+      </p>
+      <ul class="list-disc pl-5 space-y-2">
+        <li><strong>IndexedDB:</strong> HabitPulse primarily uses IndexedDB to store your local habit definitions, check-in logs, and streaks directly on your device for offline functionality.</li>
+        <li><strong>Local Storage / Session Storage:</strong> May be used by authentication libraries (such as Firebase Auth) or UI preferences (such as dark mode settings).</li>
+        <li><strong>Traditional Cookies:</strong> HabitPulse itself does not intentionally set proprietary marketing or tracking cookies. However, third-party infrastructure (such as Firebase authentication tokens or Google services) may place necessary functional cookies or tokens required for secure session management.</li>
+      </ul>
+    </section>
+
+    <section class="space-y-4 text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+      <h2 class="text-lg font-bold text-slate-900 dark:text-white pt-2">3. Analytics & Third-Party Tracking Verification Status</h2>
+      <p>
+        Any analytics, telemetry, or third-party tracking mechanisms that may be present via integrated SDKs (such as Firebase or hosting providers) <strong>require further verification and complete technical audit</strong>. We do not maintain an exhaustive pre-verified inventory of every third-party request emitted by underlying platform libraries.
+      </p>
+    </section>
+
+    <section class="space-y-4 text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+      <h2 class="text-lg font-bold text-slate-900 dark:text-white pt-2">4. Managing Your Browser Storage</h2>
+      <p>
+        You can clear local data, IndexedDB records, and storage cache at any time through your browser settings or via the application reset options in the HabitPulse settings menu. Note that clearing browser storage will remove offline local records that have not been synchronized to the cloud.
+      </p>
+    </section>
+  </main>
+
+  <footer class="border-t border-slate-200 dark:border-slate-800 py-6 text-center text-xs text-slate-500">
+    <p>© HabitPulse. <a href="./privacy.html" class="underline hover:text-indigo-600">Privacy Notice</a> • <a href="./terms.html" class="underline hover:text-indigo-600">Terms of Use</a> • <a href="./refunds.html" class="underline hover:text-indigo-600">Refunds</a></p>
+  </footer>
+</body>
+</html>

@@ -6,6 +6,7 @@ import {
   parseDateKey,
   DAYS_SHORT,
   formatDisplayDate,
+  getWeekDateKeys,
 } from '../../utils/date';
 import { Habit, HabitLogs } from '../../types';
 import { isHabitScheduledOnDate } from '../../utils/streaks';
@@ -28,14 +29,48 @@ export const DateSelector: React.FC<Props> = ({
   const today = getTodayKey();
   const isSelectedToday = selectedDateKey === today;
 
-  // Generate rolling 7-day strip centered around selectedDateKey
+  // Generate stable 7-day strip representing the calendar week of selectedDateKey
   const dateStrip = React.useMemo(() => {
-    const dates: string[] = [];
-    for (let i = -3; i <= 3; i++) {
-      dates.push(addDaysToDateKey(selectedDateKey, i));
-    }
-    return dates;
+    return getWeekDateKeys(selectedDateKey, true);
   }, [selectedDateKey]);
+
+  // Touch swipe support for switching weeks on mobile
+  const touchStartX = React.useRef<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const diffX = touchEndX - touchStartX.current;
+    touchStartX.current = null;
+    if (diffX > 60) {
+      // Swiped right -> go to previous week
+      onSelectDate(addDaysToDateKey(selectedDateKey, -7));
+    } else if (diffX < -60) {
+      // Swiped left -> go to next week
+      onSelectDate(addDaysToDateKey(selectedDateKey, 7));
+    }
+  };
+
+  // Keyboard navigation within the date strip
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      onSelectDate(addDaysToDateKey(selectedDateKey, -1));
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      onSelectDate(addDaysToDateKey(selectedDateKey, 1));
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      onSelectDate(dateStrip[0]);
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      onSelectDate(dateStrip[6]);
+    }
+  };
 
   // Check completion status for a date dot
   const getDayCompletionStatus = (dKey: string) => {
@@ -55,21 +90,23 @@ export const DateSelector: React.FC<Props> = ({
       <div className="flex items-center justify-between px-1">
         {/* Clickable Date Title that opens Date Picker Modal */}
         <button
+          type="button"
           onClick={() => setIsDatePickerOpen(true)}
-          className="flex items-center gap-2 text-left group rounded-xl p-1 -ml-1 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition cursor-pointer"
-          title="Click to open calendar date picker"
+          className="flex items-center gap-2 text-left group rounded-xl p-1 -ml-1 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500"
+          title="Open calendar date picker"
+          aria-label="Open calendar date picker"
         >
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition">
-            <CalendarIcon className="h-4 w-4" />
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 transition group-hover:bg-emerald-100 dark:group-hover:bg-emerald-950/60 group-hover:text-emerald-700 dark:group-hover:text-emerald-400">
+            <CalendarIcon className="h-4 w-4" aria-hidden="true" />
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <h2 className="text-sm font-bold text-slate-800 dark:text-slate-200 leading-none group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition">
+              <h2 className="text-sm font-bold text-slate-900 dark:text-white leading-none group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors">
                 {formatDisplayDate(selectedDateKey)}
               </h2>
-              <CalendarRange className="h-3 w-3 text-slate-400 opacity-60 group-hover:opacity-100" />
+              <CalendarRange className="h-3 w-3 text-slate-400" aria-hidden="true" />
             </div>
-            <span className="text-[11px] text-slate-400 font-medium">
+            <span className="text-[11px] text-slate-500 dark:text-slate-400 font-normal">
               {parseDateKey(selectedDateKey).toLocaleDateString('en-US', {
                 month: 'short',
                 day: 'numeric',
@@ -83,8 +120,9 @@ export const DateSelector: React.FC<Props> = ({
           {/* Jump back to today button */}
           {!isSelectedToday && (
             <button
+              type="button"
               onClick={() => onSelectDate(today)}
-              className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2.5 py-1 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900 transition cursor-pointer"
+              className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-1 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500"
             >
               Today
             </button>
@@ -92,35 +130,49 @@ export const DateSelector: React.FC<Props> = ({
 
           {/* Calendar Picker Trigger Icon */}
           <button
+            type="button"
             onClick={() => setIsDatePickerOpen(true)}
-            className="p-1.5 rounded-lg text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 transition cursor-pointer"
+            className="p-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500"
             title="Pick a specific date"
+            aria-label="Pick date"
           >
-            <CalendarRange className="h-4 w-4" />
+            <CalendarRange className="h-4 w-4" aria-hidden="true" />
           </button>
 
           {/* Prev/Next Day buttons */}
           <div className="flex items-center gap-0.5">
             <button
+              type="button"
               onClick={() => onSelectDate(addDaysToDateKey(selectedDateKey, -1))}
-              className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+              className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500"
               title="Previous Day"
+              aria-label="Previous Day"
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-4 w-4" aria-hidden="true" />
             </button>
             <button
+              type="button"
               onClick={() => onSelectDate(addDaysToDateKey(selectedDateKey, 1))}
-              className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+              className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500"
               title="Next Day"
+              aria-label="Next Day"
             >
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
         </div>
       </div>
 
-      {/* Horizontal Day Chips */}
-      <div className="grid grid-cols-7 gap-1.5 bg-white dark:bg-slate-900 p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-xs">
+      {/* Horizontal Day Chips - Stable week columns that don't slide under click */}
+      <div
+        role="group"
+        aria-label="Week day selector"
+        tabIndex={0}
+        onKeyDown={handleKeyDown}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        className="grid grid-cols-7 gap-1 bg-white dark:bg-slate-900 p-1.5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500"
+      >
         {dateStrip.map((dKey) => {
           const dateObj = parseDateKey(dKey);
           const dayName = DAYS_SHORT[dateObj.getDay()];
@@ -132,28 +184,47 @@ export const DateSelector: React.FC<Props> = ({
           return (
             <button
               key={dKey}
+              type="button"
               onClick={() => onSelectDate(dKey)}
-              className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl transition-all cursor-pointer relative ${
+              aria-label={`${isCurrentToday ? 'Today, ' : ''}${dayName}, ${dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}${status === 'all' ? ' - all habits completed' : status === 'partial' ? ' - partially completed' : ''}`}
+              aria-pressed={isSelected}
+              aria-current={isCurrentToday ? 'date' : undefined}
+              className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl transition-all cursor-pointer relative active:scale-[0.96] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-slate-900 ${
                 isSelected
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                  : 'hover:bg-slate-100 dark:hover:bg-slate-800/60 text-slate-600 dark:text-slate-400'
+                  ? 'bg-slate-900 text-white dark:bg-emerald-500 dark:text-slate-950 shadow-xs'
+                  : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'
               }`}
             >
               {/* Today indicator dot */}
-              {isCurrentToday && !isSelected && (
-                <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-indigo-500" />
+              {isCurrentToday && (
+                <span
+                  className={`absolute top-1 right-1 h-1.5 w-1.5 rounded-full ${
+                    isSelected
+                      ? 'bg-emerald-400 dark:bg-slate-950 ring-1 ring-white/60 dark:ring-emerald-400/40'
+                      : 'bg-emerald-500'
+                  }`}
+                  aria-hidden="true"
+                />
               )}
 
               <span
-                className={`text-[10px] font-bold uppercase tracking-wider ${
-                  isSelected ? 'text-indigo-100' : 'text-slate-400 dark:text-slate-500'
+                className={`text-[10px] uppercase tracking-wider transition-colors ${
+                  isSelected
+                    ? 'font-bold text-slate-300 dark:text-slate-900/90'
+                    : isCurrentToday
+                    ? 'font-bold text-emerald-600 dark:text-emerald-400'
+                    : 'font-semibold text-slate-400 dark:text-slate-500'
                 }`}
               >
                 {dayName}
               </span>
               <span
-                className={`text-sm font-extrabold mt-0.5 ${
-                  isSelected ? 'text-white' : 'text-slate-800 dark:text-slate-200'
+                className={`text-sm mt-0.5 tabular-nums transition-colors ${
+                  isSelected
+                    ? 'font-extrabold text-white dark:text-slate-950'
+                    : isCurrentToday
+                    ? 'font-extrabold text-emerald-700 dark:text-emerald-300'
+                    : 'font-bold text-slate-800 dark:text-slate-200'
                 }`}
               >
                 {dayNumber}
@@ -164,21 +235,21 @@ export const DateSelector: React.FC<Props> = ({
                 {status === 'all' && (
                   <span
                     className={`h-1.5 w-1.5 rounded-full ${
-                      isSelected ? 'bg-white' : 'bg-emerald-500'
+                      isSelected ? 'bg-emerald-400 dark:bg-slate-950' : 'bg-emerald-500'
                     }`}
                   />
                 )}
                 {status === 'partial' && (
                   <span
                     className={`h-1.5 w-1.5 rounded-full ${
-                      isSelected ? 'bg-indigo-200' : 'bg-amber-400'
+                      isSelected ? 'bg-amber-400 dark:bg-amber-900' : 'bg-amber-500'
                     }`}
                   />
                 )}
                 {status === 'empty' && (
                   <span
                     className={`h-1 w-1 rounded-full ${
-                      isSelected ? 'bg-indigo-300/40' : 'bg-slate-200 dark:bg-slate-700'
+                      isSelected ? 'bg-slate-600 dark:bg-emerald-950/40' : 'bg-slate-200 dark:bg-slate-700'
                     }`}
                   />
                 )}

@@ -6,17 +6,44 @@
     -webkit-tap-highlight-color: transparent;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
 
+    /* Restrained Neutral + Fresh Green Palette */
+    --color-accent: #059669;
+    --color-accent-hover: #047857;
+    --color-accent-subtle: rgba(5, 150, 105, 0.08);
+
     /* Unified Responsive Spacing System */
-    --space-container-px: clamp(0.75rem, 2.5vw, 2rem);
-    --space-container-py: clamp(1rem, 3vw, 2.5rem);
-    --space-card-p: clamp(0.875rem, 2.2vw, 1.75rem);
-    --space-card-gap: clamp(0.75rem, 2vw, 1.5rem);
-    --space-section-gap: clamp(1.25rem, 3.5vw, 2.5rem);
+    --space-container-px: clamp(1rem, 2.5vw, 2rem);
+    --space-container-py: clamp(1rem, 3vw, 2.25rem);
+    --space-card-p: clamp(1rem, 2vw, 1.5rem);
+    --space-card-gap: clamp(0.75rem, 1.8vw, 1.25rem);
+    --space-section-gap: clamp(1.25rem, 3vw, 2rem);
   }
 
   body {
     font-family: var(--font-sans);
     padding-bottom: env(safe-area-inset-bottom, 16px);
+  }
+
+  /* Accessible visible focus by default for keyboard users */
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline: 2px solid #059669;
+    outline-offset: 2px;
+  }
+}
+
+/* Reduced Motion Safety */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
@@ -41,12 +68,14 @@
     gap: var(--space-section-gap);
   }
 
-  .responsive-padding {
-    padding: clamp(0.875rem, 2.5vw, 1.75rem);
+  /* Solid clean card surface - anti-excessive glassmorphism */
+  .surface-card {
+    background-color: #ffffff;
+    border: 1px solid rgba(226, 232, 240, 0.9);
   }
-
-  .responsive-margin {
-    margin: clamp(0.875rem, 2.5vw, 1.75rem);
+  .dark .surface-card {
+    background-color: #0f172a;
+    border: 1px solid rgba(30, 41, 59, 0.9);
   }
 }
 
@@ -59,37 +88,24 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(156, 163, 175, 0.4);
+  background: rgba(148, 163, 184, 0.35);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(156, 163, 175, 0.7);
+  background: rgba(148, 163, 184, 0.6);
 }
 
-/* Glassmorphism utility */
-.glass {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-.dark .glass {
-  background: rgba(15, 23, 42, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-/* Touch active micro-animations */
+/* Clean touch response */
 .press-scale {
-  transition: transform 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.12s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .press-scale:active {
-  transform: scale(0.96);
+  transform: scale(0.98);
 }
 
 /* Safe area support for notch and home bar */
 .pb-safe {
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 5rem);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4.5rem);
 }
 .pt-safe {
   padding-top: env(safe-area-inset-top, 0px);

@@ -232,12 +232,12 @@ export const HabitListScreen: React.FC<Props> = ({
                 {/* Target Deadline Badge */}
                 {stat.remainingTimeText && (
                   <span
-                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-bold text-[10px] border ${
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-medium text-[10px] border ${
                       stat.isOverdue
-                        ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30'
+                        ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900/60'
                         : stat.goalStatus === 'completed'
-                        ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
-                        : 'bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 border-indigo-500/20'
+                        ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/60'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
                     }`}
                   >
                     {stat.isOverdue ? (
@@ -363,32 +363,36 @@ export const HabitListScreen: React.FC<Props> = ({
   return (
     <div className="space-y-4 pb-12">
       {/* Active vs Archived Segmented Control */}
-      <div className="grid grid-cols-2 gap-1 rounded-2xl bg-slate-100 dark:bg-slate-800/70 p-1 max-w-md">
+      <div className="grid grid-cols-2 gap-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 p-1 max-w-xs" role="tablist">
         <button
+          role="tab"
+          aria-selected={activeTabFilter === 'active'}
           onClick={() => setActiveTabFilter('active')}
-          className={`flex items-center justify-center gap-2 py-2 text-xs font-extrabold rounded-xl transition cursor-pointer ${
+          className={`flex items-center justify-center gap-2 py-1.5 px-3 text-xs rounded-lg transition-colors cursor-pointer ${
             activeTabFilter === 'active'
-              ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs'
-              : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+              ? 'bg-white dark:bg-slate-900 text-emerald-800 dark:text-emerald-300 font-semibold shadow-xs'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium'
           }`}
         >
-          <span>Active Habits</span>
-          <span className="rounded-full bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.2 text-[10px] text-indigo-600 dark:text-indigo-400">
+          <span>Active</span>
+          <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-1.5 py-0.2 text-[10px] font-semibold tabular-nums text-slate-600 dark:text-slate-300">
             {activeCount}
           </span>
         </button>
 
         <button
+          role="tab"
+          aria-selected={activeTabFilter === 'archived'}
           onClick={() => setActiveTabFilter('archived')}
-          className={`flex items-center justify-center gap-2 py-2 text-xs font-extrabold rounded-xl transition cursor-pointer ${
+          className={`flex items-center justify-center gap-2 py-1.5 px-3 text-xs rounded-lg transition-colors cursor-pointer ${
             activeTabFilter === 'archived'
-              ? 'bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 shadow-xs'
-              : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+              ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-semibold shadow-xs'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium'
           }`}
         >
-          <Archive className="h-3.5 w-3.5" />
+          <Archive className="h-3 w-3" aria-hidden="true" />
           <span>Archived</span>
-          <span className="rounded-full bg-amber-50 dark:bg-amber-950/60 px-2 py-0.2 text-[10px] text-amber-600 dark:text-amber-400">
+          <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-1.5 py-0.2 text-[10px] font-semibold tabular-nums text-slate-600 dark:text-slate-300">
             {archivedCount}
           </span>
         </button>
@@ -398,13 +402,13 @@ export const HabitListScreen: React.FC<Props> = ({
       <div className="space-y-2.5">
         {/* Search Input with Clear Button */}
         <div className="relative">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" aria-hidden="true" />
           <input
             type="text"
             placeholder={activeTabFilter === 'archived' ? "Search archived habits..." : "Search habits or categories..."}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-11 pl-10 pr-10 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-xs"
+            className="w-full h-10 pl-10 pr-10 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-2xs"
           />
           {searchQuery && (
             <button
@@ -422,22 +426,22 @@ export const HabitListScreen: React.FC<Props> = ({
           {/* Sorting Dropdown */}
           <div className="relative flex-1">
             <div className="relative flex items-center">
-              <ArrowUpDown className="absolute left-3 h-3.5 w-3.5 text-indigo-500 pointer-events-none" />
+              <ArrowUpDown className="absolute left-3 h-3.5 w-3.5 text-slate-500 pointer-events-none" aria-hidden="true" />
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as HabitSortOption)}
                 aria-label="Sort habits by"
-                className="w-full h-10 pl-8 pr-7 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-2xs appearance-none"
+                className="w-full h-9 pl-8 pr-7 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-medium text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer shadow-2xs appearance-none"
               >
-                <option value="streak-desc">🔥 Current Streak (High to Low)</option>
-                <option value="best-desc">🏆 Best Streak (High to Low)</option>
-                <option value="name-asc">🔤 Name (A to Z)</option>
-                <option value="name-desc">🔤 Name (Z to A)</option>
-                <option value="rate-desc">🎯 Completion Rate (%)</option>
-                <option value="created-desc">⏳ Date Created (Newest)</option>
-                <option value="created-asc">⏳ Date Created (Oldest)</option>
+                <option value="streak-desc">Current Streak (Highest)</option>
+                <option value="best-desc">Best Streak (Highest)</option>
+                <option value="name-asc">Name (A–Z)</option>
+                <option value="name-desc">Name (Z–A)</option>
+                <option value="rate-desc">Completion Rate (%)</option>
+                <option value="created-desc">Date Created (Newest)</option>
+                <option value="created-asc">Date Created (Oldest)</option>
               </select>
-              <div className="absolute right-3 pointer-events-none text-slate-400 text-[10px]">
+              <div className="absolute right-3 pointer-events-none text-slate-400 text-[10px]" aria-hidden="true">
                 ▼
               </div>
             </div>
@@ -446,24 +450,25 @@ export const HabitListScreen: React.FC<Props> = ({
           {/* Group View Toggle Button */}
           <button
             onClick={() => setIsGroupedByCategory(!isGroupedByCategory)}
-            className={`h-10 px-3 rounded-xl border flex items-center gap-1.5 text-xs font-bold transition cursor-pointer shrink-0 ${
+            className={`h-9 px-3 rounded-xl border flex items-center gap-1.5 text-xs font-medium transition cursor-pointer shrink-0 ${
               isGroupedByCategory
-                ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
-                : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                ? 'bg-slate-900 text-white dark:bg-emerald-500 dark:text-slate-950 border-transparent shadow-xs'
+                : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
             }`}
             title="Group habits by category"
+            aria-label="Toggle group by category"
           >
-            <Layers className="h-3.5 w-3.5" />
+            <Layers className="h-3.5 w-3.5" aria-hidden="true" />
             <span className="text-xs">Group</span>
           </button>
 
           {/* Manage Categories Button */}
           <button
             onClick={onOpenCategoryManager}
-            className="h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 flex items-center gap-1.5 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer shrink-0"
+            className="h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 flex items-center gap-1.5 text-xs font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer shrink-0"
             title="Manage Custom Categories"
           >
-            <Settings2 className="h-3.5 w-3.5 text-indigo-500" />
+            <Settings2 className="h-3.5 w-3.5 text-slate-500" aria-hidden="true" />
             <span className="hidden sm:inline">Categories</span>
           </button>
         </div>
@@ -500,7 +505,7 @@ export const HabitListScreen: React.FC<Props> = ({
                 onClick={() => setSelectedCategoryId(cat.id)}
                 className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 border ${
                   isSelected
-                    ? `${scheme.bg} text-white ${scheme.border} shadow-sm ring-2 ring-offset-1 ring-indigo-500`
+                    ? `${scheme.bg} text-white ${scheme.border} shadow-xs ring-2 ring-offset-1 ring-emerald-500`
                     : `${scheme.bgSubtle} hover:opacity-100 opacity-90`
                 }`}
               >
